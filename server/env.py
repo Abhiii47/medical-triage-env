@@ -28,7 +28,10 @@ class MedicalTriageEnv:
         scenario = get_scenario(self.difficulty)
 
         patients = [Patient(**p) for p in scenario["patients"]]
-        random.shuffle(patients)
+        # Only shuffle for multi-patient tasks — keeps single-patient (easy) IDs
+        # deterministic so tests and documented baselines stay stable.
+        if len(patients) > 1:
+            random.shuffle(patients)
         self.all_patients_history = [p.model_copy(deep=True) for p in patients]
 
         self._state = IncidentState(

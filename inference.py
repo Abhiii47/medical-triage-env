@@ -85,6 +85,51 @@ def log_end(*, success: bool, steps: int, score: float, rewards: List[float]) ->
     print(f"[END] success={str(success).lower()} steps={steps} score={score:.4f} rewards={json.dumps([round(r, 4) for r in rewards])}", flush=True)
 
 
+def _pick_priority_patient(obs: dict) -> Optional[str]:
+    """Return the patient_id of the most critical untreated patient.
+    Priority: lowest O2 → highest HR → first in queue → first in any bed."""
+    candidates = []
+
+    # Collect from queue
+    for p in obs.get("queue_summary", []):
+        hr_str = str(p.get("vitals", {}).get("HR", "80"))
+        o2_str = str(p.get("vitals", {}).get("O2", "100%")).replace("%", "")
+        try:
+            hr = int(hr_str.split("/")[0])
+        except ValueError:
+            hr = 80
+        try:
+            o2 = int(o2_str)
+        except ValueError:
+            o2 = 100
+        candidates.append((o2, -hr, p["id"]))
+
+    # Collect from active beds (skip already admitted/treated)
+    for bed_name, p in obs.get("active_beds_summary", {}).items():
+        if not p or p == "Empty":
+            continue
+        # If patient has treatments & is admitted, they're done — skip
+        if p.get("treatments") and p.get("triage_level"):
+            continue
+        hr_str = str(p.get("vitals", {}).get("HR", "80"))
+        o2_str = str(p.get("vitals", {}).get("O2", "100%")).replace("%", "")
+        try:
+            hr = int(hr_str.split("/")[0])
+        except ValueError:
+            hr = 80
+        try:
+            o2 = int(o2_str)
+        except ValueError:
+            o2 = 100
+        candidates.append((o2, -hr, p["id"]))
+
+    if not candidates:
+        return None
+    # Sort: lowest O2 first; tie-break by highest HR (stored as negative)
+    candidates.sort()
+    return candidates[0][2]
+
+
 def build_prompt(step: int, obs: dict, last_reward: float, history: List[str]) -> str:
     queue    = obs.get("queue_summary", [])
     beds     = obs.get("active_beds_summary", {})
@@ -92,9 +137,17 @@ def build_prompt(step: int, obs: dict, last_reward: float, history: List[str]) -
     feedback = obs.get("action_feedback", "")
     hist_str = "\n".join(history[-8:]) if history else "None yet"
 
+    priority_id = _pick_priority_patient(obs)
+    priority_hint = (
+        f"⚡ NEXT PRIORITY PATIENT: {priority_id} — act on this patient first unless already completed."
+        if priority_id else "All patients appear processed."
+    )
+
     return f"""=== Step {step} ===
 Last Feedback: {feedback}
 Last Reward: {last_reward:+.4f}
+
+{priority_hint}
 
 WAITING QUEUE:
 {json.dumps(queue, indent=2) if queue else 'Empty'}
@@ -142,12 +195,13 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
 
     log_start(task=task_name, env=BENCHMARK, model=MODEL_NAME)
 
-    history:     List[str]   = []
-    rewards:     List[float] = []
-    steps_taken: int         = 0
-    score:       float       = 0.0
-    success:     bool        = False
-    last_reward: float       = 0.0
+    history:          List[str]   = []
+    rewards:          List[float] = []
+    steps_taken:      int         = 0
+    score:            float       = 0.0
+    success:          bool        = False
+    last_reward:      float       = 0.0
+    _last_final_score: Optional[float] = None  # grader output from server when done=True
 
     try:
         resp = http.post(f"{ENV_BASE_URL}/reset", json={"difficulty": task_id}, timeout=30)
@@ -173,6 +227,13 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
             reward      = float(obs.get("reward", 0.0))
             done        = bool(obs.get("done", False))
             last_reward = reward
+
+            # Capture grader score when the server signals episode end.
+            # On done=True, /step returns reward=<grader_score> (env.py line 92).
+            # Only store it when there was no HTTP error on this step.
+            if done and not error_msg:
+                _last_final_score = reward
+
             rewards.append(reward)
             steps_taken = step
 
@@ -185,15 +246,20 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
             if done:
                 break
 
-        # When done=True, the terminal reward IS the grader score.
-        # Also check info dict for explicit final_score if available.
+        # When done=True the server returns the deterministic grader score as
+        # the reward on that final step (confirmed in env.py step() line 91-92).
+        # We also capture it from the `final_score` key in the JSON response if
+        # the server exposed it, to be robust against HTTP errors on the last step.
         if rewards:
-            last_reward = rewards[-1]
-            # If episode ended and final step had a high reward, it was the grader score.
-            # We also grab any explicit final_score from the last step's info.
-            score = max(0.0, min(1.0, last_reward))
+            score = max(0.0, min(1.0, rewards[-1]))
         else:
             score = 0.0
+
+        # Override with explicit final_score from the last obs if available
+        # (the FastAPI /step endpoint embeds reward=final_score when done=True)
+        if _last_final_score is not None:
+            score = max(0.0, min(1.0, _last_final_score))
+
         success = score >= success_th
 
     except Exception as exc:

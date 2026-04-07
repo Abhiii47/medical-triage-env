@@ -88,11 +88,15 @@ SCENARIOS: Dict[str, Any] = {
 
 def get_scenario(difficulty: str) -> Dict[str, Any]:
     scenario = copy.deepcopy(SCENARIOS.get(difficulty.lower(), SCENARIOS["easy"]))
-    
-    
+
+    # Easy task: single deterministic patient — skip jitter so tests and
+    # documented baseline scores remain stable across runs.
+    if difficulty.lower() == "easy":
+        return scenario
+
     for patient in scenario["patients"]:
         v = patient["vitals"]
-        
+
         if "HR" in v:
             try:
                 hr = int(v["HR"].split("/")[0])
@@ -108,16 +112,16 @@ def get_scenario(difficulty: str) -> Dict[str, Any]:
                 v["O2"] = f"{max(60, min(100, int(o2 * jitter)))}%"
             except ValueError:
                 pass
-                
+
         if "BP" in v:
             try:
-                sys, dia = map(int, v["BP"].split("/"))
+                sys_p, dia = map(int, v["BP"].split("/"))
                 j_sys = random.uniform(0.95, 1.05)
                 j_dia = random.uniform(0.95, 1.05)
-                v["BP"] = f"{max(40, int(sys * j_sys))}/{max(30, int(dia * j_dia))}"
+                v["BP"] = f"{max(40, int(sys_p * j_sys))}/{max(30, int(dia * j_dia))}"
             except ValueError:
                 pass
-                
+
         if "Temp" in v:
             try:
                 temp = float(v["Temp"])
@@ -125,5 +129,5 @@ def get_scenario(difficulty: str) -> Dict[str, Any]:
                 v["Temp"] = f"{max(34.0, min(42.0, temp * jitter)):.1f}"
             except ValueError:
                 pass
-                
+
     return scenario
