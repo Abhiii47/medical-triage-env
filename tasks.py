@@ -1,0 +1,129 @@
+import copy
+import random
+from typing import Dict, Any
+
+EVALUATIONS_DB = {
+    "ECG": {"STEMI": "ST elevation in leads II, III, aVF (Inferior STEMI).", "Sepsis": "Normal Sinus Rhythm.", "Ankle Sprain": "Sinus Tachycardia."},
+    "Blood Test": {"STEMI": "Troponin highly elevated.", "Sepsis": "WBC 18.0 (High), Lactate 4.5 (High).", "Ankle Sprain": "Normal limits."},
+    "X-Ray": {"Ankle Sprain": "No fracture, significant soft tissue swelling."},
+    "CT Scan": {"Stroke": "Acute ischemic stroke in territory of MCA.", "Hemorrhagic Shock": "Massive internal bleeding detected."},
+    "Tox Screen": {"Opioid Overdose": "Positive for Opioids and Benzodiazepines."}
+}
+
+INTERACTIONS_DB = {
+    "Penicillin Allergy": ["Penicillin", "Amoxicillin"],
+    "Opioid Overdose": ["Morphine", "Fentanyl", "Oxycodone"],
+    "Hemorrhagic Shock": ["Aspirin", "Heparin", "Warfarin"] # Blood thinners are fatal
+}
+
+SCENARIOS: Dict[str, Any] = {
+    "easy": {
+        "max_steps": 15,
+        "patients": [
+            {
+                "id": "P-101",
+                "age": 65,
+                "vitals": {"HR": "110", "BP": "150/90", "O2": "94%", "Temp": "37.1"},
+                "symptoms": ["Crushing chest pain", "Diaphoresis", "Left arm radiation"],
+                "history": ["Hypertension", "Smoker"],
+                "hidden_condition": "STEMI"
+            }
+        ],
+        "beds": {"Bed_1": None, "Bed_2": None}
+    },
+    "medium": {
+        "max_steps": 20,
+        "patients": [
+            {
+                "id": "P-102",
+                "age": 78,
+                "vitals": {"HR": "125", "BP": "85/50", "O2": "92%", "Temp": "39.2"},
+                "symptoms": ["Confusion", "Fever", "Chills", "Decreased urination"],
+                "history": ["UTI recurrences", "Penicillin Allergy"],
+                "hidden_condition": "Sepsis"
+            },
+            {
+                "id": "P-108",
+                "age": 28,
+                "vitals": {"HR": "40", "BP": "90/50", "O2": "82%", "Temp": "36.2"},
+                "symptoms": ["Pinpoint pupils", "Unresponsive", "Respiratory depression"],
+                "history": ["Substance Abuse"],
+                "hidden_condition": "Opioid Overdose"
+            }
+        ],
+        "beds": {"Bed_1": None, "Bed_2": None}
+    },
+    "hard": {
+        "max_steps": 25,
+        "patients": [
+             {
+                "id": "P-104",
+                "age": 45,
+                "vitals": {"HR": "140", "BP": "70/40", "O2": "88%", "Temp": "36.5"},
+                "symptoms": ["Unresponsive", "Massive trauma from MVA"],
+                "history": ["Unknown"],
+                "hidden_condition": "Hemorrhagic Shock"
+            },
+            {
+                "id": "P-107",
+                "age": 62,
+                "vitals": {"HR": "85", "BP": "190/110", "O2": "96%", "Temp": "37.4"},
+                "symptoms": ["Facial droop", "Slurred speech", "Left arm weakness"],
+                "history": ["Hypertension"],
+                "hidden_condition": "Stroke"
+            },
+            {
+                "id": "P-105",
+                "age": 9,
+                "vitals": {"HR": "130", "BP": "100/60", "O2": "90%", "Temp": "37.5"},
+                "symptoms": ["Severe wheezing", "Accessory muscle use", "Can't speak in full sentences"],
+                "history": ["Asthma"],
+                "hidden_condition": "Status Asthmaticus"
+            }
+        ],
+        # NOTE: 3 patients, 2 beds — agent MUST prioritize triage order. P-104 is most critical.
+        "beds": {"Bed_1": None, "Bed_2": None}
+    }
+}
+
+def get_scenario(difficulty: str) -> Dict[str, Any]:
+    scenario = copy.deepcopy(SCENARIOS.get(difficulty.lower(), SCENARIOS["easy"]))
+    
+    
+    for patient in scenario["patients"]:
+        v = patient["vitals"]
+        
+        if "HR" in v:
+            try:
+                hr = int(v["HR"].split("/")[0])
+                jitter = random.uniform(0.95, 1.05)
+                v["HR"] = str(max(30, min(200, int(hr * jitter))))
+            except ValueError:
+                pass
+
+        if "O2" in v:
+            try:
+                o2 = int(v["O2"].replace("%", ""))
+                jitter = random.uniform(0.95, 1.05)
+                v["O2"] = f"{max(60, min(100, int(o2 * jitter)))}%"
+            except ValueError:
+                pass
+                
+        if "BP" in v:
+            try:
+                sys, dia = map(int, v["BP"].split("/"))
+                j_sys = random.uniform(0.95, 1.05)
+                j_dia = random.uniform(0.95, 1.05)
+                v["BP"] = f"{max(40, int(sys * j_sys))}/{max(30, int(dia * j_dia))}"
+            except ValueError:
+                pass
+                
+        if "Temp" in v:
+            try:
+                temp = float(v["Temp"])
+                jitter = random.uniform(0.95, 1.05)
+                v["Temp"] = f"{max(34.0, min(42.0, temp * jitter)):.1f}"
+            except ValueError:
+                pass
+                
+    return scenario

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "medical-triage-env"
+version = "0.1.0"
+description = "Meta PyTorch Hackathon: Medical ER Triage Nurse OpenEnv"
+authors = [
+    {name = "Meta PyTorch Hackathon Team"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "pydantic>=2.0.0",
+    "websockets>=11.0.3",
+    "openai>=1.0.0",
+    "httpx>=0.24.0",
+    "python-dotenv>=1.0.0",
+    "openenv-core",
+]
+
+[project.urls]
+Homepage = "https://github.com/Abhiii47/metacup"
+
+[tool.pyright]
+extraPaths = ["."]

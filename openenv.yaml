@@ -1,0 +1,66 @@
+name: medical-triage-env
+version: "0.1.0"
+description: >
+  An OpenEnv environment simulating a clinical ER Triage Nurse scenario.
+  The agent must assess patients, order diagnostics, assign triage levels, administer
+  treatments, and handle life-threatening drug interactions — all under time pressure.
+  Simulates a real hospital emergency department workflow.
+author: "Meta PyTorch Hackathon"
+tags:
+  - openenv
+  - medical
+  - healthcare
+  - reinforcement-learning
+  - triage
+
+observation:
+  type: object
+  description: "Current ER state visible to the agent"
+  fields:
+    episode_id: "string — unique ID for this episode"
+    queue_summary: "list — patients waiting (id, vitals, top symptoms)"
+    active_beds_summary: "map — bed name → patient info or 'Empty'"
+    alerts: "list[string] — last 5 system alerts and vitals warnings"
+    current_step: "int — step counter since last reset"
+    max_steps: "int — maximum steps allowed this episode"
+    action_feedback: "string — natural language result of the last action"
+
+action:
+  type: object
+  description: "Action submitted by the agent"
+  fields:
+    action_type: "string — one of: assess, order_test, treat, triage, admit, discharge, wait"
+    patient_id: "string|null — target patient ID (required except for wait)"
+    target: "string|null — test name / drug name / ward name / triage level"
+
+tasks:
+  - id: easy
+    name: "STEMI Triage"
+    description: "Single STEMI patient — identify and admit to Cardiology"
+    difficulty: easy
+    max_steps: 15
+    success_criteria: "Triage level 1, order ECG, administer Aspirin, admit to Cardiology"
+    expected_score_range: [0.70, 1.0]
+
+  - id: medium
+    name: "Sepsis + Opioid Overdose"
+    description: "Sepsis patient with Penicillin allergy + Opioid Overdose — avoid fatal interactions"
+    difficulty: medium
+    max_steps: 20
+    success_criteria: "Avoid Penicillin for P-102, use Naloxone for P-108, correct ward admissions"
+    expected_score_range: [0.40, 0.80]
+
+  - id: hard
+    name: "Mass Casualty"
+    description: "Three simultaneous critical patients: Hemorrhagic Shock, Stroke, Status Asthmaticus"
+    difficulty: hard
+    max_steps: 25
+    success_criteria: "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all three"
+    expected_score_range: [0.20, 0.65]
+
+reward_range: [0.0, 1.0]
+reward_description: >
+  Step rewards provide partial progress signals throughout the episode.
+  The terminal reward is a deterministic grade (0.0–1.0) based on correct
+  triage levels, diagnostic tests ordered, treatments given, and ward dispositions.
+  Fatal drug interactions incur a -0.40 penalty per event.
