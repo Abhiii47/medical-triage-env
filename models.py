@@ -19,6 +19,7 @@ class Patient(BaseModel):
     is_stable: bool = True
     hidden_condition: Optional[str] = None
     vitals_history: List[Dict[str, str]] = Field(default_factory=list)
+    arrival_step: int = 0
 
 
 class IncidentState(BaseModel):
@@ -28,6 +29,7 @@ class IncidentState(BaseModel):
     active_beds: Dict[str, Optional[Patient]]
     current_step: int
     max_steps: int
+    arrival_schedule: Dict[int, List[Patient]] = Field(default_factory=dict)
     alerts: List[str] = Field(default_factory=list)
     fatal_errors: List[str] = Field(default_factory=list)
     score_components: Dict[str, float] = Field(default_factory=dict)
@@ -89,3 +91,4 @@ class TriageState(BaseModel):
     patients_in_beds: int
     fatal_errors: int
     alerts: List[str]
+    score: float = 0.0

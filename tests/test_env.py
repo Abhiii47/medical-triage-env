@@ -123,6 +123,79 @@ def test_hard_blood_thinner_penalty():
     print("[PASS] Hard - blood thinner penalty registered. Final reward: %.4f" % reward)
 
 
+def test_hard_perfect_score():
+    """Agent executes ideal clinical pathway for mass casualty - should score high."""
+    env = MedicalTriageEnv()
+    env.reset(difficulty="hard")
+    
+    actions = [
+        # P-104 Hemorrhagic Shock
+        IncidentAction(action_type="assess", patient_id="P-104"),
+        IncidentAction(action_type="triage", patient_id="P-104", target="1"),
+        IncidentAction(action_type="order_test", patient_id="P-104", target="CT Scan"),
+        IncidentAction(action_type="treat", patient_id="P-104", target="Blood Transfusion"),
+        IncidentAction(action_type="treat", patient_id="P-104", target="IV Fluids"),
+        IncidentAction(action_type="admit", patient_id="P-104", target="Surgery"),
+
+        # P-107 Stroke
+        IncidentAction(action_type="assess", patient_id="P-107"),
+        IncidentAction(action_type="triage", patient_id="P-107", target="2"),
+        IncidentAction(action_type="order_test", patient_id="P-107", target="CT Scan"),
+        IncidentAction(action_type="treat", patient_id="P-107", target="tPA"),
+        IncidentAction(action_type="admit", patient_id="P-107", target="Neurology"),
+
+        # P-105 Status Asthmaticus
+        IncidentAction(action_type="assess", patient_id="P-105"),
+        IncidentAction(action_type="triage", patient_id="P-105", target="1"),
+        IncidentAction(action_type="treat", patient_id="P-105", target="Albuterol"),
+        IncidentAction(action_type="admit", patient_id="P-105", target="ICU"),
+    ]
+
+    reward = 0.0
+    done = False
+    for act in actions:
+        obs, reward, done, _ = env.step(act)
+        if done:
+            break
+
+    for _ in range(25):
+        if done:
+            break
+        obs, reward, done, _ = env.step(IncidentAction(action_type="wait"))
+
+    assert done, "Episode should be done"
+    assert reward >= 0.85, "Expected >=0.85 for perfect Hard pathway, got %.4f" % reward
+    print("[PASS] Hard - perfect score: %.4f" % reward)
+
+
+def test_ankle_sprain_discharge():
+    """Testing Ankle Sprain discharge path directly."""
+    env = MedicalTriageEnv()
+    env.reset(difficulty="easy_ankle_sprain")
+
+    actions = [
+        IncidentAction(action_type="assess", patient_id="P-109"),
+        IncidentAction(action_type="order_test", patient_id="P-109", target="X-Ray"),
+        IncidentAction(action_type="triage", patient_id="P-109", target="5"),
+        IncidentAction(action_type="discharge", patient_id="P-109"),
+    ]
+
+    reward = 0.0
+    done = False
+    for act in actions:
+        obs, reward, done, _ = env.step(act)
+        if done:
+            break
+
+    for _ in range(10):
+        if done: break
+        obs, reward, done, _ = env.step(IncidentAction(action_type="wait"))
+
+    assert done, "Episode should be done"
+    assert reward >= 0.80, "Expected >=0.80 for perfect Ankle Sprain, got %.4f" % reward
+    print("[PASS] Ankle Sprain - discharge score: %.4f" % reward)
+
+
 if __name__ == "__main__":
     print("=" * 60)
     print("Running Medical Triage Env Test Suite")
@@ -135,6 +208,8 @@ if __name__ == "__main__":
         test_state_method,
         test_all_tasks_score_in_range,
         test_hard_blood_thinner_penalty,
+        test_hard_perfect_score,
+        test_ankle_sprain_discharge,
     ]
 
     passed = 0

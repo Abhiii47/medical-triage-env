@@ -23,9 +23,10 @@ TEMPERATURE: float = 0.0
 MAX_TOKENS: int    = 512
 
 TASKS = [
-    {"id": "easy",   "name": "STEMI Triage",                                               "max_steps": 15, "success_threshold": 0.60},
-    {"id": "medium", "name": "Sepsis + Opioid Overdose",                                   "max_steps": 20, "success_threshold": 0.45},
-    {"id": "hard",   "name": "Mass Casualty — Hemorrhagic Shock, Stroke, Asthmatic Child", "max_steps": 25, "success_threshold": 0.30},
+    {"id": "easy",    "name": "STEMI Triage",              "max_steps": 15, "success_threshold": 0.60},
+    {"id": "medium",  "name": "Sepsis + Opioid Overdose",  "max_steps": 20, "success_threshold": 0.45},
+    {"id": "hard",    "name": "Mass Casualty",             "max_steps": 25, "success_threshold": 0.30},
+    {"id": "chaotic", "name": "Surge — Dynamic Arrivals",  "max_steps": 35, "success_threshold": 0.20},
 ]
 
 SYSTEM_PROMPT = """You are a senior emergency room triage nurse with 20 years of clinical experience. You make fast, accurate decisions that save lives.
@@ -108,9 +109,8 @@ def _pick_priority_patient(obs: dict) -> Optional[str]:
     for bed_name, p in obs.get("active_beds_summary", {}).items():
         if not p or p == "Empty":
             continue
-        # If patient has treatments & is admitted, they're done — skip
-        if p.get("treatments") and p.get("triage_level"):
-            continue
+        # Patients in active_beds_summary have not yet been admitted/discharged,
+        # so they still need attention even if treated/triaged.
         hr_str = str(p.get("vitals", {}).get("HR", "80"))
         o2_str = str(p.get("vitals", {}).get("O2", "100%")).replace("%", "")
         try:
@@ -259,6 +259,17 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
         # (the FastAPI /step endpoint embeds reward=final_score when done=True)
         if _last_final_score is not None:
             score = max(0.0, min(1.0, _last_final_score))
+
+        # Always fetch /state to grab the final score as a robust fallback
+        try:
+            state_resp = http.get(f"{ENV_BASE_URL}/state", timeout=10)
+            if state_resp.status_code == 200:
+                final_state = state_resp.json()
+                fetched_score = final_state.get("score")
+                if fetched_score is not None:
+                    score = max(0.0, min(1.0, float(fetched_score)))
+        except Exception as e:
+            print(f"[DEBUG] Could not fetch final score from /state: {e}", flush=True)
 
         success = score >= success_th
 

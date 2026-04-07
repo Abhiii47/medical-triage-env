@@ -31,6 +31,20 @@ SCENARIOS: Dict[str, Any] = {
         ],
         "beds": {"Bed_1": None, "Bed_2": None}
     },
+    "easy_ankle_sprain": {
+        "max_steps": 10,
+        "patients": [
+            {
+                "id": "P-109",
+                "age": 22,
+                "vitals": {"HR": "85", "BP": "120/80", "O2": "99%", "Temp": "36.8"},
+                "symptoms": ["Ankle pain", "Swelling", "Difficulty walking"],
+                "history": ["None"],
+                "hidden_condition": "Ankle Sprain"
+            }
+        ],
+        "beds": {"Bed_1": None, "Bed_2": None}
+    },
     "medium": {
         "max_steps": 20,
         "patients": [
@@ -83,6 +97,42 @@ SCENARIOS: Dict[str, Any] = {
         ],
         # NOTE: 3 patients, 2 beds — agent MUST prioritize triage order. P-104 is most critical.
         "beds": {"Bed_1": None, "Bed_2": None}
+    },
+    "chaotic": {
+        "max_steps": 35,
+        "patients": [
+            {
+                "id": "P-201", "age": 62,
+                "vitals": {"HR": "85", "BP": "190/110", "O2": "96%", "Temp": "37.4"},
+                "symptoms": ["Facial droop", "Slurred speech", "Left arm weakness"],
+                "history": ["Hypertension"], "hidden_condition": "Stroke"
+            },
+            {
+                "id": "P-202", "age": 28,
+                "vitals": {"HR": "40", "BP": "90/50", "O2": "82%", "Temp": "36.2"},
+                "symptoms": ["Pinpoint pupils", "Unresponsive", "Respiratory depression"],
+                "history": ["Substance Abuse"], "hidden_condition": "Opioid Overdose"
+            }
+        ],
+        "arrival_schedule": {
+            8: [
+                {
+                    "id": "P-203", "age": 78,
+                    "vitals": {"HR": "125", "BP": "85/50", "O2": "92%", "Temp": "39.2"},
+                    "symptoms": ["Confusion", "Fever", "Chills", "Decreased urination"],
+                    "history": ["UTI recurrences", "Penicillin Allergy"], "hidden_condition": "Sepsis"
+                }
+            ],
+            18: [
+                {
+                    "id": "P-204", "age": 22,
+                    "vitals": {"HR": "85", "BP": "120/80", "O2": "99%", "Temp": "36.8"},
+                    "symptoms": ["Ankle pain", "Swelling", "Difficulty walking"],
+                    "history": ["None"], "hidden_condition": "Ankle Sprain"
+                }
+            ]
+        },
+        "beds": {"Bed_1": None, "Bed_2": None, "Bed_3": None}
     }
 }
 
@@ -91,10 +141,14 @@ def get_scenario(difficulty: str) -> Dict[str, Any]:
 
     # Easy task: single deterministic patient — skip jitter so tests and
     # documented baseline scores remain stable across runs.
-    if difficulty.lower() == "easy":
+    if difficulty.lower() in ("easy", "easy_ankle_sprain"):
         return scenario
 
-    for patient in scenario["patients"]:
+    all_patients_to_jitter = list(scenario["patients"])
+    for ps in scenario.get("arrival_schedule", {}).values():
+        all_patients_to_jitter.extend(ps)
+
+    for patient in all_patients_to_jitter:
         v = patient["vitals"]
 
         if "HR" in v:

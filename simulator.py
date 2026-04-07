@@ -175,19 +175,65 @@ class Simulator:
             self.state.is_done = True
             self.state.alerts.append("All patients processed. Shift ended.")
             
+    def _enrich_patient_obs(self, p: Patient) -> dict:
+        obs = {
+            "id": p.id,
+            "vitals": p.vitals,
+            "time_in_queue": self.state.current_step - p.arrival_step,
+            "deterioration_trend": "stable",
+            "vitals_delta": {}
+        }
+        if len(p.vitals_history) >= 1:
+            prev = p.vitals_history[-1]
+            curr = p.vitals
+            delta = {}
+            worsening = False
+            improving = False
+
+            if "HR" in prev and "HR" in curr:
+                try:
+                    p_hr = int(prev["HR"].split("/")[0])
+                    c_hr = int(curr["HR"].split("/")[0])
+                    d_hr = c_hr - p_hr
+                    if d_hr != 0: delta["HR"] = d_hr
+                    if d_hr >= 5: worsening = True
+                    if d_hr <= -5: improving = True
+                except Exception: pass
+
+            if "O2" in prev and "O2" in curr:
+                try:
+                    p_o2 = int(prev["O2"].replace("%", ""))
+                    c_o2 = int(curr["O2"].replace("%", ""))
+                    d_o2 = c_o2 - p_o2
+                    if d_o2 != 0: delta["O2"] = d_o2
+                    if d_o2 <= -2: worsening = True
+                    if d_o2 >= 2: improving = True
+                except Exception: pass
+
+            obs["vitals_delta"] = delta
+            if worsening: obs["deterioration_trend"] = "worsening"
+            elif improving: obs["deterioration_trend"] = "improving"
+
+        return obs
+
     def get_observation(self) -> IncidentObservation:
-        q_sum = [{"id": p.id, "vitals": p.vitals, "symptoms": p.symptoms[:2]} for p in self.state.queue]
+        q_sum = []
+        for p in self.state.queue:
+            p_obs = self._enrich_patient_obs(p)
+            p_obs["symptoms"] = p.symptoms[:2]
+            q_sum.append(p_obs)
+
         bed_sum = {}
         for b, p in self.state.active_beds.items():
             if p:
-                bed_sum[b] = {
-                    "id": p.id,
-                    "vitals": p.vitals,
+                p_obs = self._enrich_patient_obs(p)
+                p_obs.update({
                     "stable": p.is_stable,
                     "triage_level": p.triage_level,
                     "tests_done": p.tests_ordered,
                     "treatments": p.treatments_given
-                }
+                })
+                bed_sum[b] = p_obs
             else:
                 bed_sum[b] = "Empty"
 

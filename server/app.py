@@ -339,9 +339,16 @@ function isDanger(k, v) {
   return false;
 }
 
-function renderVital(k, v) {
+function renderVital(k, v, delta) {
   const d = isDanger(k, v);
-  return `<div class="vital-box ${d?'danger':''}"><div class="vk">${k}</div><div class="vv">${v}</div></div>`;
+  let dT = '';
+  if (delta && delta[k]) {
+    const dv = delta[k];
+    const sgn = dv > 0 ? '+' : '';
+    const bad = (k==='O2'&&dv<0) || (k==='HR'&&dv>0);
+    dT = `<span style="font-size:0.7em;margin-left:4px;color:${bad?'var(--red)':'var(--green)'}">${sgn}${dv}</span>`;
+  }
+  return `<div class="vital-box ${d?'danger':''}"><div class="vk">${k}</div><div class="vv">${v}${dT}</div></div>`;
 }
 
 function renderBedCard(bedName, p) {
@@ -352,18 +359,26 @@ function renderBedCard(bedName, p) {
     </div>`;
   }
   const stable = p.stable !== false;
-  const vitalsHtml = Object.entries(p.vitals||{}).map(([k,v])=>renderVital(k,v)).join('');
+  const vitalsHtml = Object.entries(p.vitals||{}).map(([k,v])=>renderVital(k,v,p.vitals_delta)).join('');
   const tri = TRIAGE[p.triage_level];
   const triHtml = tri ? `<span class="triage-pill ${tri[0]}">${tri[1]}</span>` : '';
   const txHtml = (p.treatments||[]).map(t=>`<span class="treatment-tag">${t}</span>`).join('');
   const testHtml = (p.tests_done||[]).map(t=>`<span class="treatment-tag" style="color:var(--muted)">${t}</span>`).join('');
+  
+  let tHtml = '';
+  if (p.deterioration_trend && p.deterioration_trend !== 'stable') {
+    const isW = p.deterioration_trend === 'worsening';
+    tHtml = `<span style="font-size:0.75rem;color:var(--${isW?'red':'green'});margin-left:8px;">${isW?'📉 Worsening':'📈 Improving'}</span>`;
+  }
+  let qHtml = p.time_in_queue !== undefined ? `<span style="font-size:0.75rem;color:var(--border2);margin-left:8px;">⏱️ ${p.time_in_queue}st</span>` : '';
+
   return `<div class="bed-card ${stable?'stable':'critical'}">
     <div class="bed-header">
       <span class="bname">${bedName}</span>
       <span class="bstatus occupied">● OCCUPIED</span>
     </div>
     <div class="bed-body">
-      <div class="bed-pid">Patient ID: ${p.id}</div>
+      <div class="bed-pid">Patient ID: ${p.id}${qHtml}${tHtml}</div>
       <div class="vitals-monitor">${vitalsHtml}</div>
       <div class="triage-row">${triHtml}${txHtml}${testHtml}</div>
     </div>
@@ -371,8 +386,24 @@ function renderBedCard(bedName, p) {
 }
 
 function renderQueueItem(p) {
-  const vitals = Object.entries(p.vitals||{}).map(([k,v])=>`<span class="vsm-tag ${isDanger(k,v)?'bad':''}">${k} ${v}</span>`).join('');
-  return `<div class="queue-item"><div class="pid">${p.id}</div><div class="vsm">${vitals}</div></div>`;
+  const vitals = Object.entries(p.vitals||{}).map(([k,v])=> {
+    let dv = '';
+    if (p.vitals_delta && p.vitals_delta[k]) {
+      const vVal = p.vitals_delta[k];
+      const bad = (k==='O2'&&vVal<0) || (k==='HR'&&vVal>0);
+      dv = `<span style="font-size:0.7em;margin-left:2px;color:var(--${bad?'red':'green'})">${vVal>0?'+':''}${vVal}</span>`;
+    }
+    return `<span class="vsm-tag ${isDanger(k,v)?'bad':''}">${k} ${v}${dv}</span>`;
+  }).join('');
+  
+  let tHtml = '';
+  if (p.time_in_queue !== undefined) tHtml += `<span style="font-size:0.75rem;color:var(--border2);margin-right:8px;">⏱️ ${p.time_in_queue}st</span>`;
+  if (p.deterioration_trend && p.deterioration_trend !== 'stable') {
+    const isW = p.deterioration_trend === 'worsening';
+    tHtml += `<span style="font-size:0.75rem;color:var(--${isW?'red':'green'})">${isW?'📉 Worsening':'📈 Improving'}</span>`;
+  }
+  
+  return `<div class="queue-item"><div class="pid">${p.id}</div><div style="flex:1"></div>${tHtml}<div class="vsm" style="margin-left:12px;">${vitals}</div></div>`;
 }
 
 let actionCount = 0;
