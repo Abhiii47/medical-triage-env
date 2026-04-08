@@ -77,6 +77,15 @@ def list_tasks():
     return {
         "tasks": [
             {
+                "id": "easy_ankle_sprain",
+                "difficulty": "easy",
+                "max_steps": 10,
+                "description": "Single ankle sprain patient — discharge home",
+                "success_criteria": "Triage level 5, order X-Ray, discharge home",
+                "expected_score_range": [0.70, 1.0],
+                "grader": "grade_task"
+            },
+            {
                 "id": "easy",
                 "difficulty": "easy",
                 "max_steps": 15,

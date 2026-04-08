@@ -40,6 +40,15 @@ action:
     target: "string|null — test name / drug name / ward name / triage level"
 
 tasks:
+  - id: easy_ankle_sprain
+    name: "Ankle Sprain"
+    description: "Single ankle sprain patient — discharge home"
+    difficulty: easy
+    max_steps: 10
+    success_criteria: "Triage level 5, order X-Ray, discharge home"
+    expected_score_range: [0.70, 1.0]
+    grader: "grade_task"
+
   - id: easy
     name: "STEMI Triage"
     description: "Single STEMI patient — identify and admit to Cardiology"
