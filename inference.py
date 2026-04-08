@@ -15,8 +15,11 @@ except ImportError:
 
 API_BASE_URL = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.2-3B-Instruct")
+
+_llm_call_count = 0
 API_KEY = os.environ.get("HF_TOKEN", "")
 ENV_BASE_URL = os.environ.get("ENV_BASE_URL", "http://localhost:7860")
+USE_FALLBACK = os.environ.get("USE_FALLBACK", "true").lower() == "true"
 
 BENCHMARK = "medical-triage-env"
 TEMPERATURE = 0.0
@@ -223,7 +226,12 @@ def _rule_based_action(obs: dict) -> dict:
         return {"action_type": "wait"}
 
 
+_llm_success = 0
+_llm_fallback = 0
+
+
 def get_action(client: OpenAI, step: int, obs: dict, last_reward: float, history: List[str]) -> dict:
+    global _llm_success, _llm_fallback
     prompt = build_prompt(step, obs, last_reward, history)
     for attempt in range(2):
         try:
@@ -240,15 +248,23 @@ def get_action(client: OpenAI, step: int, obs: dict, last_reward: float, history
             content = (response.choices[0].message.content or "").strip()
             parsed = _extract_json(content)
             if parsed:
+                _llm_success += 1
                 return parsed
         except Exception:
             pass
-    return _rule_based_action(obs)
+    
+    if USE_FALLBACK:
+        _llm_fallback += 1
+        return _rule_based_action(obs)
+    else:
+        return {"action_type": "wait"}
 
 
 def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
-    global _fallback_state
+    global _fallback_state, _llm_success, _llm_fallback
     _fallback_state.clear()
+    _llm_success = 0
+    _llm_fallback = 0
 
     task_id = task["id"]
     task_name = task["name"]
