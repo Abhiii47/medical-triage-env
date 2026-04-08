@@ -90,6 +90,62 @@ SCENARIOS: Dict[str, Any] = {
         ],
         "beds": {"Bed_1": None, "Bed_2": None}
     },
+    "chaotic": {
+        "max_steps": 35,
+        "patients": [
+            {
+                "id": "P-201", "age": 55,
+                "vitals": {"HR": "118", "BP": "155/95", "O2": "93%", "Temp": "37.2"},
+                "symptoms": ["Chest tightness", "Shortness of breath", "Jaw pain"],
+                "history": ["Diabetes", "Hypertension"],
+                "hidden_condition": "STEMI"
+            },
+            {
+                "id": "P-202", "age": 34,
+                "vitals": {"HR": "38", "BP": "88/52", "O2": "80%", "Temp": "36.1"},
+                "symptoms": ["Unresponsive", "Slow shallow breathing", "Pinpoint pupils"],
+                "history": ["Heroin use"],
+                "hidden_condition": "Opioid Overdose"
+            }
+        ],
+        "beds": {"Bed_1": None, "Bed_2": None, "Bed_3": None},
+        "arrival_schedule": {
+            "8": [
+                {
+                    "id": "P-203", "age": 71,
+                    "vitals": {"HR": "128", "BP": "82/48", "O2": "91%", "Temp": "39.5"},
+                    "symptoms": ["High fever", "Confusion", "Rigors", "Dark urine"],
+                    "history": ["Diabetes", "Penicillin Allergy"],
+                    "hidden_condition": "Sepsis"
+                }
+            ],
+            "16": [
+                {
+                    "id": "P-204", "age": 19,
+                    "vitals": {"HR": "88", "BP": "118/76", "O2": "99%", "Temp": "36.9"},
+                    "symptoms": ["Twisted ankle", "Pain on weight-bearing", "Mild swelling"],
+                    "history": ["None"],
+                    "hidden_condition": "Ankle Sprain"
+                },
+                {
+                    "id": "P-205", "age": 67,
+                    "vitals": {"HR": "92", "BP": "195/115", "O2": "95%", "Temp": "37.3"},
+                    "symptoms": ["Sudden right-sided weakness", "Slurred speech", "Confusion"],
+                    "history": ["Atrial fibrillation", "Hypertension"],
+                    "hidden_condition": "Stroke"
+                }
+            ],
+            "24": [
+                {
+                    "id": "P-206", "age": 7,
+                    "vitals": {"HR": "135", "BP": "98/58", "O2": "89%", "Temp": "37.6"},
+                    "symptoms": ["Severe wheezing", "Retractions", "Unable to complete sentences"],
+                    "history": ["Asthma", "Multiple prior intubations"],
+                    "hidden_condition": "Status Asthmaticus"
+                }
+            ]
+        }
+    },
 }
 
 
