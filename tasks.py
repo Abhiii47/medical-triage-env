@@ -108,7 +108,7 @@ def get_scenario(difficulty: str) -> Dict[str, Any]:
             try:
                 hr = int(v["HR"].split("/")[0])
                 jitter = random.uniform(0.95, 1.05)
-                v["HR"] = str(max(30, min(200, int(hr * jitter)))))
+                v["HR"] = str(max(30, min(200, int(hr * jitter))))
             except ValueError:
                 pass
         if "O2" in v:
