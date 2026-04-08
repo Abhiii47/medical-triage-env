@@ -14,10 +14,11 @@ except ImportError:
     pass
 
 API_BASE_URL = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.2-3B-Instruct")
+MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
 
 _llm_call_count = 0
 API_KEY = os.environ.get("HF_TOKEN", "")
+print(f"[DEBUG] API_KEY length: {len(API_KEY)}, starts with: {API_KEY[:10] if API_KEY else 'empty'}", flush=True)
 ENV_BASE_URL = os.environ.get("ENV_BASE_URL", "http://localhost:7860")
 USE_FALLBACK = os.environ.get("USE_FALLBACK", "true").lower() == "true"
 
@@ -250,7 +251,8 @@ def get_action(client: OpenAI, step: int, obs: dict, last_reward: float, history
             if parsed:
                 _llm_success += 1
                 return parsed
-        except Exception:
+        except Exception as e:
+            print(f"[DEBUG] LLM API error: {type(e).__name__}: {e}", flush=True)
             pass
     
     if USE_FALLBACK:
@@ -337,6 +339,10 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
 
         success = score >= success_th
 
+    except Exception as e:
+        print(f"[ERROR] Task {task_id} failed: {e}", flush=True)
+        score = 0.0
+
     return score
 
 
@@ -345,6 +351,7 @@ def main() -> None:
         print("[ERROR] HF_TOKEN not set. Add it to .env as: HF_TOKEN=hf_your_token_here", flush=True)
         sys.exit(1)
 
+    print(f"[DEBUG] Initializing client with API_BASE_URL: {API_BASE_URL}", flush=True)
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
     with httpx.Client() as http:
