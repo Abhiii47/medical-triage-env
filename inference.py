@@ -337,9 +337,6 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
 
         success = score >= success_th
 
-    except Exception:
-        pass
-
     return score
 
 
