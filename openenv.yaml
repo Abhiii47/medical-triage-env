@@ -48,15 +48,6 @@ graders:
     function: grade_task
 
 tasks:
-  - id: easy_ankle_sprain
-    name: "Ankle Sprain"
-    description: "Single ankle sprain patient — discharge home"
-    difficulty: easy_ankle_sprain
-    max_steps: 10
-    success_criteria: "Triage level 5, order X-Ray, discharge home"
-    expected_score_range: [0.70, 1.0]
-    grader: grade_task
-
   - id: easy
     name: "STEMI Triage"
     description: "Single STEMI patient — identify and admit to Cardiology"
@@ -82,15 +73,6 @@ tasks:
     max_steps: 25
     success_criteria: "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all three"
     expected_score_range: [0.20, 0.65]
-    grader: grade_task
-
-  - id: chaotic
-    name: "Surge — Dynamic Arrivals"
-    description: "Unpredictable patient arrivals with changing priorities throughout the episode"
-    difficulty: chaotic
-    max_steps: 35
-    success_criteria: "Adapt to new arrivals, prioritize correctly, avoid fatal drug interactions"
-    expected_score_range: [0.15, 0.50]
     grader: grade_task
 
 reward_range: [0.0, 1.0]

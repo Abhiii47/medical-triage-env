@@ -31,11 +31,9 @@ TEMPERATURE = 0.0
 MAX_TOKENS = 512
 
 TASKS = [
-    {"id": "easy_ankle_sprain", "name": "Ankle Sprain", "max_steps": 10, "success_threshold": 0.70},
     {"id": "easy", "name": "STEMI Triage", "max_steps": 15, "success_threshold": 0.60},
     {"id": "medium", "name": "Sepsis + Opioid Overdose", "max_steps": 20, "success_threshold": 0.45},
     {"id": "hard", "name": "Mass Casualty", "max_steps": 25, "success_threshold": 0.30},
-    {"id": "chaotic", "name": "Surge — Dynamic Arrivals", "max_steps": 35, "success_threshold": 0.20},
 ]
 
 SYSTEM_PROMPT = """You are a senior emergency room triage nurse with 20 years of clinical experience. You make fast, accurate decisions that save lives.

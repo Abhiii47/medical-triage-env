@@ -77,15 +77,6 @@ def list_tasks():
     return {
         "tasks": [
             {
-                "id": "easy_ankle_sprain",
-                "difficulty": "easy",
-                "max_steps": 10,
-                "description": "Single ankle sprain patient — discharge home",
-                "success_criteria": "Triage level 5, order X-Ray, discharge home",
-                "expected_score_range": [0.70, 1.0],
-                "grader": "grade_task"
-            },
-            {
                 "id": "easy",
                 "difficulty": "easy",
                 "max_steps": 15,
@@ -110,15 +101,6 @@ def list_tasks():
                 "description": "Mass casualty: Hemorrhagic Shock + Stroke + Asthmatic child",
                 "success_criteria": "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all",
                 "expected_score_range": [0.20, 0.65],
-                "grader": "grade_task"
-            },
-            {
-                "id": "chaotic",
-                "difficulty": "hard",
-                "max_steps": 35,
-                "description": "Surge — Dynamic Arrivals with changing priorities",
-                "success_criteria": "Adapt to new arrivals, prioritize correctly, avoid fatal drug interactions",
-                "expected_score_range": [0.15, 0.50],
                 "grader": "grade_task"
             }
         ]
