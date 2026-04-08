@@ -275,7 +275,7 @@ if not HF_TOKEN:
 
 client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
-def run_task(client: OpenAI, http: httpx.Client, task: dict) -> bool:
+def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
     global _fallback_state
     _fallback_state.clear()
 
@@ -359,7 +359,7 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> bool:
     
     rewards_str = ",".join([f"{r:.2f}" for r in rewards])
     print(f"[END]   success={str(success).lower()} steps={steps_taken} rewards={rewards_str}", flush=True)
-    return success
+    return score
 
 
 def main() -> None:
