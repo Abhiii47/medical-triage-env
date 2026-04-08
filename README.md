@@ -1,5 +1,7 @@
 # Medical Triage OpenEnv
 
+**Live Demo:** [https://huggingface.co/spaces/abhiii01/medical-triage-env](https://huggingface.co/spaces/abhiii01/medical-triage-env)
+
 ## Overview
 Medical Triage OpenEnv is a reinforcement learning environment simulating an emergency room triage nurse. Agents must prioritize patients, order diagnostics, administer treatments, and admit patients to appropriate wards—all under time pressure with strict safety protocols.
 

@@ -23,7 +23,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Abhiii47/metacup"
+Homepage = "https://github.com/Abhiii47/medical-triage-env"
+Repository = "https://github.com/Abhiii47/medical-triage-env"
+HuggingFace = "https://huggingface.co/spaces/abhiii01/medical-triage-env"
 
 [tool.pyright]
 extraPaths = ["."]
