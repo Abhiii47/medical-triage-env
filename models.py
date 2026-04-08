@@ -61,4 +61,4 @@ class TriageState(BaseModel):
     patients_in_beds: int
     fatal_errors: int
     alerts: List[str]
-    score: float = 0.0
+    score: float = 0.01

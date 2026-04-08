@@ -125,7 +125,7 @@ class MedicalTriageEnv:
             return TriageState(
                 episode_id="", step=0, max_steps=0, done=False,
                 difficulty=self.difficulty, patients_in_queue=0,
-                patients_in_beds=0, fatal_errors=0, alerts=[], score=0.0
+                patients_in_beds=0, fatal_errors=0, alerts=[], score=0.01
             )
         s = self._state
         occupied = sum(1 for p in s.active_beds.values() if p is not None)
