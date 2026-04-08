@@ -1,26 +1,7 @@
-"""
-client.py — Medical Triage Nurse OpenEnv Client
-
-Async OpenEnv-compatible client. RL training frameworks (TRL, torchforge,
-SkyRL, ART, Oumi) interact via the standard reset() / step() / state() interface.
-
-Usage (async):
-    async with MedicalTriageEnvClient(base_url="http://localhost:7860") as env:
-        obs = await env.reset(difficulty="easy")
-        result = await env.step(TriageAction(action_type="assess", patient_id="P-101"))
-
-Usage (sync):
-    with MedicalTriageEnvClient(base_url="http://localhost:7860").sync() as env:
-        obs = env.reset(difficulty="medium")
-
-Quick demo:
-    python client.py --url http://localhost:7860 --difficulty easy
-"""
 from __future__ import annotations
 
 import argparse
 import asyncio
-import json
 import os
 from typing import Any, Dict, Optional
 
@@ -66,11 +47,6 @@ class EpisodeState(BaseModel):
 
 
 class MedicalTriageEnvClient:
-    """
-    Async OpenEnv client for the Medical Triage Nurse environment.
-    Use as an async context manager or call .sync() for synchronous usage.
-    """
-
     def __init__(self, base_url: Optional[str] = None, timeout: float = 30.0):
         self.base_url = (base_url or os.environ.get("ENV_BASE_URL", "http://localhost:7860")).rstrip("/")
         self._timeout = timeout
@@ -99,10 +75,10 @@ class MedicalTriageEnvClient:
         resp.raise_for_status()
         data = resp.json()
         reward = float(data.pop("reward", 0.0))
-        done   = bool(data.pop("done", False))
+        done = bool(data.pop("done", False))
         obs = TriageObservation(**{k: data.get(k, v) for k, v in TriageObservation().model_dump().items()})
         obs.reward = reward
-        obs.done   = done
+        obs.done = done
         return StepResult(observation=obs, reward=reward, done=done, info=data.get("info", {}))
 
     async def state(self) -> EpisodeState:
@@ -150,37 +126,31 @@ class _SyncWrapper:
 
 
 async def _demo(url: str, difficulty: str) -> None:
-    print(f"\n🏥 Medical Triage Env — Quick Demo  [{url}  difficulty={difficulty}]\n")
+    print(f"\nMedical Triage Env — Demo [{url} difficulty={difficulty}]\n")
     async with MedicalTriageEnvClient(base_url=url) as env:
         print(f"Health: {await env.health()}\n")
         obs = await env.reset(difficulty=difficulty)
         print(f"Episode: {obs.episode_id}  Max steps: {obs.max_steps}  Queue: {len(obs.queue_summary)} patient(s)")
-        st = await env.state()
-        print(f"State  : step={st.step}  done={st.done}  fatals={st.fatal_errors}\n")
 
         if obs.queue_summary:
             pid = obs.queue_summary[0]["id"]
             actions = [
-                TriageAction(action_type="assess",     patient_id=pid),
+                TriageAction(action_type="assess", patient_id=pid),
                 TriageAction(action_type="order_test", patient_id=pid, target="ECG"),
-                TriageAction(action_type="triage",     patient_id=pid, target="1"),
-                TriageAction(action_type="treat",      patient_id=pid, target="Aspirin"),
-                TriageAction(action_type="admit",      patient_id=pid, target="Cardiology"),
+                TriageAction(action_type="triage", patient_id=pid, target="1"),
+                TriageAction(action_type="treat", patient_id=pid, target="Aspirin"),
+                TriageAction(action_type="admit", patient_id=pid, target="Cardiology"),
             ]
-            total = 0.0
             for i, action in enumerate(actions, 1):
                 result = await env.step(action)
-                total += result.reward
-                print(f"  [STEP {i}] {action.action_type}({action.patient_id}, {action.target}) → reward={result.reward:+.4f}  done={result.done}")
-                print(f"           {result.observation.action_feedback}")
+                print(f"  [STEP {i}] {action.action_type}({action.patient_id}, {action.target}) -> reward={result.reward:+.4f} done={result.done}")
                 if result.done:
                     break
-            print(f"\nTotal reward: {total:+.4f}")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Medical Triage Env — Quick Demo")
-    parser.add_argument("--url",        default=os.environ.get("ENV_BASE_URL", "http://localhost:7860"))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--url", default=os.environ.get("ENV_BASE_URL", "http://localhost:7860"))
     parser.add_argument("--difficulty", default="easy", choices=["easy", "medium", "hard"])
     args = parser.parse_args()
     asyncio.run(_demo(args.url, args.difficulty))

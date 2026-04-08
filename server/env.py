@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from models import IncidentState, IncidentObservation, IncidentAction, Patient, TriageState
@@ -9,11 +9,6 @@ from grader import grade, EXPECTED
 
 
 class MedicalTriageEnv:
-    """
-    OpenEnv-compatible Medical ER Triage environment.
-    Implements reset() / step() / state() — Gymnasium-style interface.
-    """
-
     def __init__(self):
         self._state: IncidentState = None
         self.simulator: Simulator = None
@@ -21,7 +16,6 @@ class MedicalTriageEnv:
         self.difficulty: str = "easy"
 
     def reset(self, **kwargs) -> IncidentObservation:
-        """Reset to a new episode. kwargs: difficulty='easy'|'medium'|'hard', seed=None"""
         import random
         if kwargs.get("seed") is not None:
             random.seed(kwargs["seed"])
@@ -31,8 +25,6 @@ class MedicalTriageEnv:
         scenario = get_scenario(self.difficulty)
 
         patients = [Patient(**p) for p in scenario["patients"]]
-        # Only shuffle for multi-patient tasks — keeps single-patient (easy) IDs
-        # deterministic so tests and documented baselines stay stable.
         if len(patients) > 1:
             random.shuffle(patients)
         self.all_patients_history = [p.model_copy(deep=True) for p in patients]
@@ -55,29 +47,20 @@ class MedicalTriageEnv:
         return self.simulator.get_observation()
 
     def step(self, action: IncidentAction):
-        """
-        Execute one action. Returns (observation, reward, done, info).
-
-        Step rewards:  +0.03 assess  +0.01 order_test  +0.03 triage
-                       +0.05 admit/discharge  -0.15 fatal treat  -0.01 wait
-        Terminal reward: deterministic grade score [0.0–1.0]
-        """
         if not self.simulator:
             raise RuntimeError("Call reset() before step().")
 
         prev_fatal_count = len(self._state.fatal_errors)
         self.simulator.step(action)
 
-        # Process arrival schedule
         if self._state.arrival_schedule and self._state.current_step in self._state.arrival_schedule:
             new_patients = self._state.arrival_schedule.pop(self._state.current_step)
             for new_p in new_patients:
                 new_p.arrival_step = self._state.current_step
                 self._state.queue.append(new_p)
                 self.all_patients_history.append(new_p.model_copy(deep=True))
-                self._state.alerts.append(f"⚠️ SURGE: New patient {new_p.id} arrived!")
+                self._state.alerts.append(f"SURGE: New patient {new_p.id} arrived!")
 
-            # Immediately attempt to assign empty beds
             empty_beds = [b for b, p in self._state.active_beds.items() if p is None]
             for b in empty_beds:
                 if self._state.queue:
@@ -88,13 +71,13 @@ class MedicalTriageEnv:
         for p in self.all_patients_history:
             current = self.simulator._get_patient(p.id)
             if current:
-                p.triage_level    = current.triage_level
-                p.tests_ordered   = list(current.tests_ordered)
-                p.test_results    = dict(current.test_results)
+                p.triage_level = current.triage_level
+                p.tests_ordered = list(current.tests_ordered)
+                p.test_results = dict(current.test_results)
                 p.treatments_given = list(current.treatments_given)
-                p.admitted_ward   = current.admitted_ward
-                p.discharged      = current.discharged
-                p.is_stable       = current.is_stable
+                p.admitted_ward = current.admitted_ward
+                p.discharged = current.discharged
+                p.is_stable = current.is_stable
 
         step_reward = 0.0
         at = action.action_type
@@ -109,7 +92,8 @@ class MedicalTriageEnv:
                         hr = int(p.vitals.get("HR", "80").split("/")[0])
                         if o2 < 85 or hr > 140:
                             step_reward += 0.05
-                    except Exception: pass
+                    except Exception:
+                        pass
         elif at == "order_test" and action.target:
             step_reward += 0.01
         elif at == "triage" and action.patient_id:
@@ -137,7 +121,6 @@ class MedicalTriageEnv:
         return obs, round(step_reward, 4), done, {}
 
     def state(self) -> TriageState:
-        """Current episode state — OpenEnv state() contract."""
         if self._state is None:
             return TriageState(
                 episode_id="", step=0, max_steps=0, done=False,
@@ -160,11 +143,9 @@ class MedicalTriageEnv:
         )
 
     def get_state(self) -> IncidentState:
-        """Return raw internal state (for testing)."""
         return self._state
 
     def render(self) -> str:
-        """Human-readable ER status for debugging/logging."""
         s = self._state
         if not s:
             return "Environment not initialized."
@@ -174,5 +155,5 @@ class MedicalTriageEnv:
             status = f"{p.id} L{p.triage_level or '?'}" if p else "Empty"
             lines.append(f"  {bed}: {status}")
         if s.fatal_errors:
-            lines.append(f"⚠️  FATAL ERRORS: {len(s.fatal_errors)}")
+            lines.append(f"FATAL ERRORS: {len(s.fatal_errors)}")
         return "\n".join(lines)

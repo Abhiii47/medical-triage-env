@@ -13,7 +13,7 @@ EVALUATIONS_DB = {
 INTERACTIONS_DB = {
     "Penicillin Allergy": ["Penicillin", "Amoxicillin"],
     "Opioid Overdose": ["Morphine", "Fentanyl", "Oxycodone"],
-    "Hemorrhagic Shock": ["Aspirin", "Heparin", "Warfarin"] # Blood thinners are fatal
+    "Hemorrhagic Shock": ["Aspirin", "Heparin", "Warfarin"]
 }
 
 SCENARIOS: Dict[str, Any] = {
@@ -21,8 +21,7 @@ SCENARIOS: Dict[str, Any] = {
         "max_steps": 15,
         "patients": [
             {
-                "id": "P-101",
-                "age": 65,
+                "id": "P-101", "age": 65,
                 "vitals": {"HR": "110", "BP": "150/90", "O2": "94%", "Temp": "37.1"},
                 "symptoms": ["Crushing chest pain", "Diaphoresis", "Left arm radiation"],
                 "history": ["Hypertension", "Smoker"],
@@ -35,8 +34,7 @@ SCENARIOS: Dict[str, Any] = {
         "max_steps": 10,
         "patients": [
             {
-                "id": "P-109",
-                "age": 22,
+                "id": "P-109", "age": 22,
                 "vitals": {"HR": "85", "BP": "120/80", "O2": "99%", "Temp": "36.8"},
                 "symptoms": ["Ankle pain", "Swelling", "Difficulty walking"],
                 "history": ["None"],
@@ -49,16 +47,14 @@ SCENARIOS: Dict[str, Any] = {
         "max_steps": 20,
         "patients": [
             {
-                "id": "P-102",
-                "age": 78,
+                "id": "P-102", "age": 78,
                 "vitals": {"HR": "125", "BP": "85/50", "O2": "92%", "Temp": "39.2"},
                 "symptoms": ["Confusion", "Fever", "Chills", "Decreased urination"],
                 "history": ["UTI recurrences", "Penicillin Allergy"],
                 "hidden_condition": "Sepsis"
             },
             {
-                "id": "P-108",
-                "age": 28,
+                "id": "P-108", "age": 28,
                 "vitals": {"HR": "40", "BP": "90/50", "O2": "82%", "Temp": "36.2"},
                 "symptoms": ["Pinpoint pupils", "Unresponsive", "Respiratory depression"],
                 "history": ["Substance Abuse"],
@@ -70,42 +66,35 @@ SCENARIOS: Dict[str, Any] = {
     "hard": {
         "max_steps": 25,
         "patients": [
-             {
-                "id": "P-104",
-                "age": 45,
+            {
+                "id": "P-104", "age": 45,
                 "vitals": {"HR": "140", "BP": "70/40", "O2": "88%", "Temp": "36.5"},
                 "symptoms": ["Unresponsive", "Massive trauma from MVA"],
                 "history": ["Unknown"],
                 "hidden_condition": "Hemorrhagic Shock"
             },
             {
-                "id": "P-107",
-                "age": 62,
+                "id": "P-107", "age": 62,
                 "vitals": {"HR": "85", "BP": "190/110", "O2": "96%", "Temp": "37.4"},
                 "symptoms": ["Facial droop", "Slurred speech", "Left arm weakness"],
                 "history": ["Hypertension"],
                 "hidden_condition": "Stroke"
             },
             {
-                "id": "P-105",
-                "age": 9,
+                "id": "P-105", "age": 9,
                 "vitals": {"HR": "130", "BP": "100/60", "O2": "90%", "Temp": "37.5"},
                 "symptoms": ["Severe wheezing", "Accessory muscle use", "Can't speak in full sentences"],
                 "history": ["Asthma"],
                 "hidden_condition": "Status Asthmaticus"
             }
         ],
-        # NOTE: 3 patients, 2 beds — agent MUST prioritize triage order. P-104 is most critical.
         "beds": {"Bed_1": None, "Bed_2": None}
     },
-
 }
+
 
 def get_scenario(difficulty: str) -> Dict[str, Any]:
     scenario = copy.deepcopy(SCENARIOS.get(difficulty.lower(), SCENARIOS["easy"]))
-
-    # Easy task: single deterministic patient — skip jitter so tests and
-    # documented baseline scores remain stable across runs.
     if difficulty.lower() in ("easy", "easy_ankle_sprain"):
         return scenario
 
@@ -115,15 +104,13 @@ def get_scenario(difficulty: str) -> Dict[str, Any]:
 
     for patient in all_patients_to_jitter:
         v = patient["vitals"]
-
         if "HR" in v:
             try:
                 hr = int(v["HR"].split("/")[0])
                 jitter = random.uniform(0.95, 1.05)
-                v["HR"] = str(max(30, min(200, int(hr * jitter))))
+                v["HR"] = str(max(30, min(200, int(hr * jitter)))))
             except ValueError:
                 pass
-
         if "O2" in v:
             try:
                 o2 = int(v["O2"].replace("%", ""))
@@ -131,16 +118,12 @@ def get_scenario(difficulty: str) -> Dict[str, Any]:
                 v["O2"] = f"{max(60, min(100, int(o2 * jitter)))}%"
             except ValueError:
                 pass
-
         if "BP" in v:
             try:
                 sys_p, dia = map(int, v["BP"].split("/"))
-                j_sys = random.uniform(0.95, 1.05)
-                j_dia = random.uniform(0.95, 1.05)
-                v["BP"] = f"{max(40, int(sys_p * j_sys))}/{max(30, int(dia * j_dia))}"
+                v["BP"] = f"{max(40, int(sys_p * random.uniform(0.95, 1.05)))}/{max(30, int(dia * random.uniform(0.95, 1.05)))}"
             except ValueError:
                 pass
-
         if "Temp" in v:
             try:
                 temp = float(v["Temp"])
