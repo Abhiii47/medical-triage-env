@@ -1,3 +1,21 @@
+"""
+client.py — Medical Triage Nurse OpenEnv Client
+
+Async OpenEnv-compatible client. RL training frameworks (TRL, torchforge,
+SkyRL, ART, Oumi) interact via the standard reset() / step() / state() interface.
+
+Usage (async):
+    async with MedicalTriageEnvClient(base_url="http://localhost:7860") as env:
+        obs = await env.reset(difficulty="easy")
+        result = await env.step(TriageAction(action_type="assess", patient_id="P-101"))
+
+Usage (sync):
+    with MedicalTriageEnvClient(base_url="http://localhost:7860").sync() as env:
+        obs = env.reset(difficulty="medium")
+
+Quick demo:
+    python client.py --url http://localhost:7860 --difficulty easy
+"""
 from __future__ import annotations
 
 import argparse
@@ -170,22 +188,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-"""
-client.py — Medical Triage Nurse OpenEnv Client
-
-Async OpenEnv-compatible client. RL training frameworks (TRL, torchforge,
-SkyRL, ART, Oumi) interact via the standard reset() / step() / state() interface.
-
-Usage (async):
-    async with MedicalTriageEnvClient(base_url="http://localhost:7860") as env:
-        obs = await env.reset(difficulty="easy")
-        result = await env.step(TriageAction(action_type="assess", patient_id="P-101"))
-
-Usage (sync):
-    with MedicalTriageEnvClient(base_url="http://localhost:7860").sync() as env:
-        obs = env.reset(difficulty="medium")
-
-Quick demo:
-    python client.py --url http://localhost:7860 --difficulty easy
-"""

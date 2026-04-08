@@ -14,7 +14,7 @@ except ImportError:
     pass
 
 API_BASE_URL: str = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME: str   = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.2-3B-Instruct")
+MODEL_NAME: str = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.2-3B-Instruct")
 API_KEY: str      = os.environ.get("HF_TOKEN", "")
 ENV_BASE_URL: str = os.environ.get("ENV_BASE_URL", "http://localhost:7860")
 
@@ -26,7 +26,7 @@ TASKS = [
     {"id": "easy",    "name": "STEMI Triage",              "max_steps": 15, "success_threshold": 0.60},
     {"id": "medium",  "name": "Sepsis + Opioid Overdose",  "max_steps": 20, "success_threshold": 0.45},
     {"id": "hard",    "name": "Mass Casualty",             "max_steps": 25, "success_threshold": 0.30},
-    {"id": "chaotic", "name": "Surge — Dynamic Arrivals",  "max_steps": 35, "success_threshold": 0.20},
+
 ]
 
 SYSTEM_PROMPT = """You are a senior emergency room triage nurse with 20 years of clinical experience. You make fast, accurate decisions that save lives.
@@ -204,7 +204,7 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
     _last_final_score: Optional[float] = None  # grader output from server when done=True
 
     try:
-        resp = http.post(f"{ENV_BASE_URL}/reset", json={"difficulty": task_id}, timeout=30)
+        resp = http.post(f"{ENV_BASE_URL}/reset", json={"difficulty": task_id, "seed": 42}, timeout=30)
         resp.raise_for_status()
         obs = resp.json()
 

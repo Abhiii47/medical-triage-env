@@ -101,7 +101,7 @@ def list_tasks():
                 "description": "Mass casualty: Hemorrhagic Shock + Stroke + Asthmatic child",
                 "success_criteria": "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all",
                 "expected_score_range": [0.20, 0.65],
-            },
+            }
         ]
     }
 

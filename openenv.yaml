@@ -64,13 +64,7 @@ tasks:
     success_criteria: "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all three"
     expected_score_range: [0.20, 0.65]
 
-  - id: chaotic
-    name: "Surge — Dynamic Arrivals"
-    description: "Dynamic mid-episode arrivals with competing severities under extreme bed pressure."
-    difficulty: chaotic
-    max_steps: 35
-    success_criteria: "Process 2 critical patients while managing a surge array of Sepsis and Ankle Sprain."
-    expected_score_range: [0.10, 0.50]
+
 
 reward_range: [0.0, 1.0]
 reward_description: >

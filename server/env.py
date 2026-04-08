@@ -4,7 +4,6 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from models import IncidentState, IncidentObservation, IncidentAction, Patient, TriageState
 from tasks import get_scenario
-from tasks import get_scenario
 from simulator import Simulator
 from grader import grade, EXPECTED
 
