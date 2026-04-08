@@ -30,6 +30,9 @@ BENCHMARK = "medical-triage-env"
 TEMPERATURE = 0.0
 MAX_TOKENS = 512
 
+def clamp_score(val: float) -> float:
+    return round(max(0.01, min(0.99, float(val))), 4)
+
 TASKS = [
     {"id": "easy", "name": "STEMI Triage", "max_steps": 15, "success_threshold": 0.60},
     {"id": "medium", "name": "Sepsis + Opioid Overdose", "max_steps": 20, "success_threshold": 0.45},
@@ -344,9 +347,9 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> bool:
             state_resp = http.get(f"{ENV_BASE_URL}/state", timeout=10)
             if state_resp.status_code == 200:
                 final_state = state_resp.json()
-                score = float(final_state.get("score", rewards[-1] if rewards else 0.01))
+                score = clamp_score(float(final_state.get("score", rewards[-1] if rewards else 0.01)))
         except Exception:
-            score = rewards[-1] if rewards else 0.01
+            score = clamp_score(rewards[-1] if rewards else 0.01)
 
         success = score >= success_th
 

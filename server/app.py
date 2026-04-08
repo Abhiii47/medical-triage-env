@@ -58,7 +58,7 @@ def step(action_dict: dict):
         "step": obs.current_step,
         "action": f"{act.action_type}({act.patient_id or ''} {act.target or ''})".strip(),
         "feedback": obs.action_feedback,
-        "reward": round(float(reward), 4),
+        "reward": clamp_score(reward),
     })
     if len(_action_log) > 50:
         _action_log.pop(0)
@@ -85,7 +85,7 @@ def list_tasks():
                 "max_steps": 15,
                 "description": "Single STEMI patient — identify and admit to Cardiology",
                 "success_criteria": "Triage level 1, order ECG, treat with Aspirin, admit to Cardiology",
-                "expected_score_range": [0.70, 0.99],
+                "expected_score_range": [0.0, 1.0],
                 "grader": "grade_task"
             },
             {
@@ -94,7 +94,7 @@ def list_tasks():
                 "max_steps": 20,
                 "description": "Sepsis (Penicillin allergy) + Opioid Overdose — avoid fatal interactions",
                 "success_criteria": "Avoid Penicillin for P-102, use Naloxone for P-108, admit both correctly",
-                "expected_score_range": [0.70, 0.99],
+                "expected_score_range": [0.0, 1.0],
                 "grader": "grade_task"
             },
             {
@@ -103,7 +103,7 @@ def list_tasks():
                 "max_steps": 25,
                 "description": "Mass casualty: Hemorrhagic Shock + Stroke + Asthmatic child",
                 "success_criteria": "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all",
-                "expected_score_range": [0.60, 0.99],
+                "expected_score_range": [0.0, 1.0],
                 "grader": "grade_task"
             }
         ]
