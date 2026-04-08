@@ -60,8 +60,8 @@ python inference.py
 | Task | Score | Threshold |
 |------|-------|-----------|
 | Easy | 0.9900 | 0.60 |
-| Medium | 1.0000 | 0.45 |
+| Medium | 0.9900 | 0.45 |
 | Hard | 0.9100 | 0.30 |
-| **Average** | **0.9667** | |
+| **Average** | **0.9633** | |
 
 All tasks pass their success thresholds with deterministic, reproducible scores.

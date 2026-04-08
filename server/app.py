@@ -82,7 +82,7 @@ def list_tasks():
                 "max_steps": 15,
                 "description": "Single STEMI patient — identify and admit to Cardiology",
                 "success_criteria": "Triage level 1, order ECG, treat with Aspirin, admit to Cardiology",
-                "expected_score_range": [0.70, 1.0],
+                "expected_score_range": [0.70, 0.99],
                 "grader": "grade_task"
             },
             {
@@ -91,7 +91,7 @@ def list_tasks():
                 "max_steps": 20,
                 "description": "Sepsis (Penicillin allergy) + Opioid Overdose — avoid fatal interactions",
                 "success_criteria": "Avoid Penicillin for P-102, use Naloxone for P-108, admit both correctly",
-                "expected_score_range": [0.70, 1.0],
+                "expected_score_range": [0.70, 0.99],
                 "grader": "grade_task"
             },
             {
@@ -100,7 +100,7 @@ def list_tasks():
                 "max_steps": 25,
                 "description": "Mass casualty: Hemorrhagic Shock + Stroke + Asthmatic child",
                 "success_criteria": "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all",
-                "expected_score_range": [0.60, 1.0],
+                "expected_score_range": [0.60, 0.99],
                 "grader": "grade_task"
             }
         ]

@@ -66,7 +66,7 @@ def grade(state: IncidentState, all_patients_history: list) -> float:
     else:
         final = 0.0
 
-    return round(max(0.0, min(1.0, final)), 4)
+    return round(max(0.01, min(0.99, final)), 4)
 
 
 def grade_task(task_id: str, state: IncidentState, all_patients_history: list) -> float:
