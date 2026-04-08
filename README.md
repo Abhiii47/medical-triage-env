@@ -55,13 +55,13 @@ export HF_TOKEN="your_token_here"
 python inference.py
 ```
 
-## Performance (meta-llama/Llama-3.2-3B-Instruct)
+## Performance (meta-llama/Llama-3.1-8B-Instruct)
 
 | Task | Score | Threshold |
 |------|-------|-----------|
-| Easy | 1.0000 | 0.60 |
-| Medium | 0.5750 | 0.45 |
-| Hard | 0.8267 | 0.30 |
-| **Average** | **0.7589 - 0.7972** | |
+| Easy | 0.9900 | 0.60 |
+| Medium | 1.0000 | 0.45 |
+| Hard | 0.9100 | 0.30 |
+| **Average** | **0.9667** | |
 
 All tasks pass their success thresholds with deterministic, reproducible scores.

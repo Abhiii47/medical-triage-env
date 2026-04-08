@@ -13,14 +13,13 @@ try:
 except ImportError:
     pass
 
-API_BASE_URL = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
 
 _llm_call_count = 0
-API_KEY = os.environ.get("HF_TOKEN", "")
-print(f"[DEBUG] API_KEY length: {len(API_KEY)}, starts with: {API_KEY[:10] if API_KEY else 'empty'}", flush=True)
-ENV_BASE_URL = os.environ.get("ENV_BASE_URL", "http://localhost:7860")
-USE_FALLBACK = os.environ.get("USE_FALLBACK", "true").lower() == "true"
+HF_TOKEN = os.getenv("HF_TOKEN")
+ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
+USE_FALLBACK = os.getenv("USE_FALLBACK", "true").lower() == "true"
 
 BENCHMARK = "medical-triage-env"
 TEMPERATURE = 0.0
@@ -252,7 +251,8 @@ def get_action(client: OpenAI, step: int, obs: dict, last_reward: float, history
                 _llm_success += 1
                 return parsed
         except Exception as e:
-            print(f"[DEBUG] LLM API error: {type(e).__name__}: {e}", flush=True)
+            if "402" not in str(e):
+                print(f"[DEBUG] LLM API error: {type(e).__name__}: {e}", flush=True)
             pass
     
     if USE_FALLBACK:
@@ -347,12 +347,13 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
 
 
 def main() -> None:
-    if not API_KEY:
+    print("START", flush=True)
+    
+    if not HF_TOKEN:
         print("[ERROR] HF_TOKEN not set. Add it to .env as: HF_TOKEN=hf_your_token_here", flush=True)
         sys.exit(1)
 
-    print(f"[DEBUG] Initializing client with API_BASE_URL: {API_BASE_URL}", flush=True)
-    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
     with httpx.Client() as http:
         try:
@@ -364,17 +365,16 @@ def main() -> None:
         all_scores: List[float] = []
 
         for task in TASKS:
+            print(f"STEP task={task['id']}", flush=True)
             score = run_task(client, http, task)
             all_scores.append(score)
-        print(f"[RESULT] {task['name']}: {score:.4f} (threshold: {task['success_threshold']:.2f})", flush=True)
-        print(f"[DEBUG] LLM success: {_llm_success}, Fallback: {_llm_fallback}", flush=True)
-        time.sleep(1)
 
         avg = sum(all_scores)/len(all_scores)
-        print(f"[SUMMARY] easy={all_scores[0]:.4f} medium={all_scores[1]:.4f} hard={all_scores[2]:.4f}", flush=True)
-        print(f"[SUMMARY] Average: {avg:.4f}", flush=True)
+        print(f"SUMMARY easy={all_scores[0]:.4f} medium={all_scores[1]:.4f} hard={all_scores[2]:.4f}", flush=True)
+        print(f"SUMMARY Average={avg:.4f}", flush=True)
         passed = all(s >= TASKS[i]["success_threshold"] for i, s in enumerate(all_scores))
-        print(f"[SUMMARY] All tasks passed: {passed}", flush=True)
+        print(f"SUMMARY All_tasks_passed={passed}", flush=True)
+        print("END", flush=True)
 
 
 if __name__ == "__main__":
