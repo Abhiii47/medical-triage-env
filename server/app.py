@@ -26,6 +26,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def clamp_score(val: float) -> float:
+    return round(max(0.01, min(0.99, float(val))), 4)
+
 _env = MedicalTriageEnv()
 _last_obs: dict = {}
 _action_log: list = []
@@ -49,7 +52,7 @@ def step(action_dict: dict):
     act = IncidentAction(**action_dict)
     obs, reward, done, info = _env.step(act)
     _last_obs = obs.model_dump()
-    _last_obs["reward"] = round(float(reward), 4)
+    _last_obs["reward"] = clamp_score(reward)
     _last_obs["done"] = done
     _action_log.append({
         "step": obs.current_step,
@@ -117,9 +120,8 @@ class GradingRequest(BaseModel):
 @app.post("/grader")
 def grade_episode(grading_request: GradingRequest):
     task_id = grading_request.task_id
-    
     score = grade_task(task_id, _env.get_state(), _env.all_patients_history)
-    return {"task_id": task_id, "score": score}
+    return {"task_id": task_id, "score": clamp_score(score)}
 
 
 @app.get("/dashboard_data")
