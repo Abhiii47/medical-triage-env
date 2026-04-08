@@ -1,5 +1,6 @@
 name: medical-triage-env
 version: "0.1.0"
+spec_version: 1
 description: >
   An OpenEnv environment simulating a clinical ER Triage Nurse scenario.
   The agent must assess patients, order diagnostics, assign triage levels, administer
@@ -74,6 +75,15 @@ tasks:
     max_steps: 25
     success_criteria: "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all three"
     expected_score_range: [0.20, 0.65]
+    grader: "grade_task"
+
+  - id: chaotic
+    name: "Surge — Dynamic Arrivals"
+    description: "Unpredictable patient arrivals with changing priorities throughout the episode"
+    difficulty: hard
+    max_steps: 35
+    success_criteria: "Adapt to new arrivals, prioritize correctly, avoid fatal drug interactions"
+    expected_score_range: [0.15, 0.50]
     grader: "grade_task"
 
 

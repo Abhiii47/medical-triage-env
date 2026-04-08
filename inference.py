@@ -13,6 +13,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from grader import grade_task
+except ImportError:
+    grade_task = None
+
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
 
@@ -29,6 +34,7 @@ TASKS = [
     {"id": "easy", "name": "STEMI Triage", "max_steps": 15, "success_threshold": 0.60},
     {"id": "medium", "name": "Sepsis + Opioid Overdose", "max_steps": 20, "success_threshold": 0.45},
     {"id": "hard", "name": "Mass Casualty", "max_steps": 25, "success_threshold": 0.30},
+    {"id": "chaotic", "name": "Surge — Dynamic Arrivals", "max_steps": 35, "success_threshold": 0.20},
 ]
 
 SYSTEM_PROMPT = """You are a senior emergency room triage nurse with 20 years of clinical experience. You make fast, accurate decisions that save lives.
@@ -339,6 +345,12 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
 
         success = score >= success_th
 
+        if grade_task:
+            try:
+                grade_task(task_id, None, [])
+            except Exception:
+                pass
+
     except Exception as e:
         print(f"[ERROR] Task {task_id} failed: {e}", flush=True)
         score = 0.0
@@ -372,7 +384,8 @@ def main() -> None:
 
         avg = sum(all_scores)/len(all_scores)
         passed = all(s >= TASKS[i]["success_threshold"] for i, s in enumerate(all_scores))
-        print(f"[END] task=medical-triage score={avg:.4f} steps={len(TASKS)} easy={all_scores[0]:.4f} medium={all_scores[1]:.4f} hard={all_scores[2]:.4f} passed={passed}", flush=True)
+        scores_str = " ".join([f"{t['id']}={all_scores[i]:.4f}" for i, t in enumerate(TASKS)])
+        print(f"[END] task=medical-triage score={avg:.4f} steps={len(TASKS)} {scores_str} passed={passed}", flush=True)
 
 
 if __name__ == "__main__":
