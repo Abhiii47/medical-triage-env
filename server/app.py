@@ -9,6 +9,7 @@ from typing import Optional
 
 from server.env import MedicalTriageEnv
 from models import IncidentAction, IncidentObservation
+from grader import grade_task
 
 app = FastAPI(
     title="Medical Triage OpenEnv",
@@ -81,6 +82,7 @@ def list_tasks():
                 "description": "Single STEMI patient — identify and admit to Cardiology",
                 "success_criteria": "Triage level 1, order ECG, treat with Aspirin, admit to Cardiology",
                 "expected_score_range": [0.70, 1.0],
+                "grader": "grade_task"
             },
             {
                 "id": "medium",
@@ -89,6 +91,7 @@ def list_tasks():
                 "description": "Sepsis (Penicillin allergy) + Opioid Overdose — avoid fatal interactions",
                 "success_criteria": "Avoid Penicillin for P-102, use Naloxone for P-108, admit both correctly",
                 "expected_score_range": [0.40, 0.80],
+                "grader": "grade_task"
             },
             {
                 "id": "hard",
@@ -97,6 +100,7 @@ def list_tasks():
                 "description": "Mass casualty: Hemorrhagic Shock + Stroke + Asthmatic child",
                 "success_criteria": "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all",
                 "expected_score_range": [0.20, 0.65],
+                "grader": "grade_task"
             }
         ]
     }

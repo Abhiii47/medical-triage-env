@@ -371,11 +371,8 @@ def main() -> None:
             all_scores.append(score)
 
         avg = sum(all_scores)/len(all_scores)
-        print(f"[SUMMARY] easy={all_scores[0]:.4f} medium={all_scores[1]:.4f} hard={all_scores[2]:.4f}", flush=True)
-        print(f"[SUMMARY] Average={avg:.4f}", flush=True)
         passed = all(s >= TASKS[i]["success_threshold"] for i, s in enumerate(all_scores))
-        print(f"[SUMMARY] All_tasks_passed={passed}", flush=True)
-        print(f"[END] task=medical-triage score={avg:.4f} steps={len(TASKS)}", flush=True)
+        print(f"[END] task=medical-triage score={avg:.4f} steps={len(TASKS)} easy={all_scores[0]:.4f} medium={all_scores[1]:.4f} hard={all_scores[2]:.4f} passed={passed}", flush=True)
 
 
 if __name__ == "__main__":
