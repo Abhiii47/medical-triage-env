@@ -285,3 +285,12 @@ def get_dashboard():
 @app.get("/", response_class=HTMLResponse)
 def root():
     return DASHBOARD_HTML
+
+
+def main():
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+if __name__ == "__main__":
+    main()

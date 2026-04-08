@@ -22,6 +22,9 @@ dependencies = [
     "openenv-core",
 ]
 
+[project.scripts]
+server = "server.app:main"
+
 [project.urls]
 Homepage = "https://github.com/Abhiii47/medical-triage-env"
 Repository = "https://github.com/Abhiii47/medical-triage-env"
