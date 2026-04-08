@@ -152,22 +152,22 @@ _fallback_state: dict = {}
 def _diagnose_from_feedback(feedback: str) -> tuple:
     fb = feedback.lower()
     if "hemorrhagic" in fb or "hemorrhage" in fb or "bleeding" in fb or "trauma" in fb or "massive" in fb or ("shock" in fb and ("blood" in fb or "hypotension" in fb or "bp" in fb)):
-        return "Blood Test", "Blood Transfusion", "Surgery"
+        return "Blood Test", "Blood Transfusion", "Surgery", "1"
     elif "chest pain" in fb or "stemi" in fb:
-        return "ECG", "Aspirin", "Cardiology"
-    elif "overdose" in fb or "opioid" in fb:
-        return "Tox Screen", "Naloxone", "ICU"
+        return "ECG", "Aspirin", "Cardiology", "1"
+    elif "overdose" in fb or "opioid" in fb or ("pinpoint" in fb and "pupils" in fb) or ("respiratory depression" in fb) or "unresponsive" in fb:
+        return "Tox Screen", "Naloxone", "ICU", "1"
     elif "sepsis" in fb or "septic" in fb or "fever" in fb or "infection" in fb or "uti" in fb:
         if "penicillin" in fb:
-            return "Blood Test", "Vancomycin", "ICU"
-        return "Blood Test", "Antibiotics", "ICU"
+            return "Blood Test", "Vancomycin", "ICU", "2"
+        return "Blood Test", "Antibiotics", "ICU", "2"
     elif "stroke" in fb or "cerebrovascular" in fb or "facial droop" in fb or "slurred speech" in fb or "arm weakness" in fb:
-        return "CT Scan", "Aspirin", "Neurology"
+        return "CT Scan", "Aspirin", "Neurology", "2"
     elif "asthmatic" in fb or "asthma" in fb or "respiratory distress" in fb or "wheezing" in fb:
-        return "Blood Test", "Albuterol", "ICU"
+        return "Blood Test", "Albuterol", "ICU", "1"
     elif "ankle" in fb or "sprain" in fb:
-        return "X-Ray", "Pain Relief", "Discharge"
-    return "Blood Test", "Pain Relief", "General"
+        return "X-Ray", "Pain Relief", "Discharge", "5"
+    return "Blood Test", "Pain Relief", "General", "3"
 
 
 def _rule_based_action(obs: dict) -> dict:
@@ -192,6 +192,7 @@ def _rule_based_action(obs: dict) -> dict:
         state["_treatment"] = None
         state["_ward"] = None
         state["_test"] = None
+        state["_triage"] = "1"
 
     step = state.get("_step", 0)
 
@@ -200,15 +201,16 @@ def _rule_based_action(obs: dict) -> dict:
         return {"action_type": "assess", "patient_id": current_pid}
     elif step == 1:
         feedback = obs.get("action_feedback", "")
-        test, treatment, ward = _diagnose_from_feedback(feedback)
+        test, treatment, ward, triage_level = _diagnose_from_feedback(feedback)
         state["_test"] = test
         state["_treatment"] = treatment
         state["_ward"] = ward
+        state["_triage"] = triage_level
         state["_step"] = 2
         return {"action_type": "order_test", "patient_id": current_pid, "target": test}
     elif step == 2:
         state["_step"] = 3
-        return {"action_type": "triage", "patient_id": current_pid, "target": "1"}
+        return {"action_type": "triage", "patient_id": current_pid, "target": state.get("_triage", "1")}
     elif step == 3:
         state["_step"] = 4
         return {"action_type": "treat", "patient_id": current_pid, "target": state.get("_treatment", "Pain Relief")}
