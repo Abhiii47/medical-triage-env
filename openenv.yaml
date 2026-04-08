@@ -75,9 +75,9 @@ tasks:
     expected_score_range: [0.60, 0.99]
     grader: grade_task
 
-reward_range: [0.0, 1.0]
+reward_range: [0.01, 0.99]
 reward_description: >
   Step rewards provide partial progress signals throughout the episode.
-  The terminal reward is a deterministic grade (0.0–1.0) based on correct
+  The terminal reward is a deterministic grade (0.01–0.99) based on correct
   triage levels, diagnostic tests ordered, treatments given, and ward dispositions.
-  Fatal drug interactions incur a -0.40 penalty per event.
+  Fatal drug interactions incur a -0.40 penalty per event (clamped to 0.01).

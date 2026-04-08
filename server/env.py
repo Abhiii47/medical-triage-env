@@ -118,7 +118,7 @@ class MedicalTriageEnv:
             final_score = grade(self._state, self.all_patients_history)
             return obs, final_score, done, {"final_score": final_score}
 
-        return obs, round(step_reward, 4), done, {}
+        return obs, round(max(0.01, min(0.99, float(step_reward))), 4), done, {}
 
     def state(self) -> TriageState:
         if self._state is None:
@@ -139,7 +139,7 @@ class MedicalTriageEnv:
             patients_in_beds=occupied,
             fatal_errors=len(s.fatal_errors),
             alerts=s.alerts[-5:],
-            score=grade(s, self.all_patients_history) if s.is_done else 0.0,
+            score=grade(s, self.all_patients_history) if s.is_done else 0.01,
         )
 
     def get_state(self) -> IncidentState:

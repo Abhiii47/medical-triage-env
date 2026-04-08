@@ -357,9 +357,6 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
     return score
 
 
-def main() -> None:
-    print("[START] task=medical-triage", flush=True)
-    
 if not HF_TOKEN:
     raise ValueError("HF_TOKEN environment variable is required")
 
