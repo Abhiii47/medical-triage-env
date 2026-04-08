@@ -330,15 +330,16 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> bool:
             else:
                 act_str = f'{at}()'
 
-            # PIXEL PERFECT: Note the TWO spaces after [STEP] and the lowercase done
-            print(f"[STEP]  step={step} action={act_str} reward={reward:.4f} done={str(done).lower()} error={error_msg}", flush=True)
+            
+            clean_act = act_str.replace("'", '"')
+            print(f"[STEP]  step={step} action={clean_act} reward={reward:.2f} done={str(done).lower()} error={error_msg}", flush=True)
 
             history.append(f"Step {step}: {act_str} -> {reward:+.4f}")
 
             if done:
                 break
 
-        # Get final score from state
+        
         try:
             state_resp = http.get(f"{ENV_BASE_URL}/state", timeout=10)
             if state_resp.status_code == 200:
@@ -352,8 +353,8 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> bool:
     except Exception as e:
         pass
 
-    # PIXEL PERFECT: Note the THREE spaces after [END] and 4 decimal rewards
-    rewards_str = ",".join([f"{r:.4f}" for r in rewards])
+    
+    rewards_str = ",".join([f"{r:.2f}" for r in rewards])
     print(f"[END]   success={str(success).lower()} steps={steps_taken} rewards={rewards_str}", flush=True)
     return success
 
