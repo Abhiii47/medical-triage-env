@@ -362,8 +362,9 @@ def main() -> None:
         for task in TASKS:
             score = run_task(client, http, task)
             all_scores.append(score)
-            print(f"[RESULT] {task['name']}: {score:.4f} (threshold: {task['success_threshold']:.2f})", flush=True)
-            time.sleep(1)
+        print(f"[RESULT] {task['name']}: {score:.4f} (threshold: {task['success_threshold']:.2f})", flush=True)
+        print(f"[DEBUG] LLM success: {_llm_success}, Fallback: {_llm_fallback}", flush=True)
+        time.sleep(1)
 
         avg = sum(all_scores)/len(all_scores)
         print(f"[SUMMARY] easy={all_scores[0]:.4f} medium={all_scores[1]:.4f} hard={all_scores[2]:.4f}", flush=True)
