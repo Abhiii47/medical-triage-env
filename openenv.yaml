@@ -47,6 +47,7 @@ tasks:
     max_steps: 15
     success_criteria: "Triage level 1, order ECG, administer Aspirin, admit to Cardiology"
     expected_score_range: [0.70, 1.0]
+    grader: "grade_task"
 
   - id: medium
     name: "Sepsis + Opioid Overdose"
@@ -55,6 +56,7 @@ tasks:
     max_steps: 20
     success_criteria: "Avoid Penicillin for P-102, use Naloxone for P-108, correct ward admissions"
     expected_score_range: [0.40, 0.80]
+    grader: "grade_task"
 
   - id: hard
     name: "Mass Casualty"
@@ -63,6 +65,7 @@ tasks:
     max_steps: 25
     success_criteria: "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all three"
     expected_score_range: [0.20, 0.65]
+    grader: "grade_task"
 
 
 

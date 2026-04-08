@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from typing import Optional
+from pydantic import BaseModel
 
 from server.env import MedicalTriageEnv
 from models import IncidentAction, IncidentObservation
@@ -104,6 +105,21 @@ def list_tasks():
             }
         ]
     }
+
+
+
+class GradingRequest(BaseModel):
+    task_id: str = "easy"
+    state: Optional[dict] = None
+    episode: Optional[dict] = None
+
+
+@app.post("/grader")
+def grade_episode(grading_request: GradingRequest):
+    task_id = grading_request.task_id
+    
+    score = grade_task(task_id, _env.get_state(), _env.all_patients_history)
+    return {"task_id": task_id, "score": score}
 
 
 @app.get("/dashboard_data")
