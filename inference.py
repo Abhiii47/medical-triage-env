@@ -360,31 +360,96 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
 def main() -> None:
     print("[START] task=medical-triage", flush=True)
     
-    if not HF_TOKEN:
-        print("[ERROR] HF_TOKEN not set. Add it to .env as: HF_TOKEN=hf_your_token_here", flush=True)
-        sys.exit(1)
+if not HF_TOKEN:
+    raise ValueError("HF_TOKEN environment variable is required")
 
-    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
-    with httpx.Client() as http:
+def run_task(client: OpenAI, http: httpx.Client, task: dict) -> bool:
+    global _fallback_state
+    _fallback_state.clear()
+
+    task_id = task["id"]
+    task_name = task["id"] # The spec uses task_id as task name usually, or task['name']
+    max_steps = task["max_steps"]
+    success_th = task["success_threshold"]
+
+    print(f"[START] task={task_id} env={BENCHMARK} model={MODEL_NAME}", flush=True)
+
+    history: List[str] = []
+    rewards: List[float] = []
+    steps_taken = 0
+    score = 0.0
+    success = False
+    last_reward = 0.0
+
+    try:
+        resp = http.post(f"{ENV_BASE_URL}/reset", json={"difficulty": task_id, "seed": 42}, timeout=30)
+        resp.raise_for_status()
+        obs = resp.json()
+
+        for step in range(1, max_steps + 1):
+            if obs.get("done", False):
+                break
+
+            action = get_action(client, step, obs, last_reward, history)
+            error_msg = "null"
+
+            try:
+                step_resp = http.post(f"{ENV_BASE_URL}/step", json=action, timeout=30)
+                step_resp.raise_for_status()
+                obs = step_resp.json()
+            except Exception as e:
+                error_msg = str(e)
+                obs = {"done": True, "reward": 0.0, "current_step": step, "action_feedback": "error"}
+
+            reward = float(obs.get("reward", 0.0))
+            done = bool(obs.get("done", False))
+            last_reward = reward
+            rewards.append(reward)
+            steps_taken = step
+
+            # Format action string: type(patient target)
+            act_str = f"{action.get('action_type', 'wait')}"
+            if action.get("patient_id"):
+                act_str += f"('{action['patient_id']}'"
+                if action.get("target"):
+                    act_str += f",'{action['target']}'"
+                act_str += ")"
+            elif action.get("target"):
+                act_str += f"('{action['target']}')"
+
+            print(f"[STEP] step={step} action={act_str} reward={reward:.2f} done={str(done).lower()} error={error_msg}", flush=True)
+
+            history.append(f"Step {step}: {act_str} -> {reward:+.4f}")
+
+            if done:
+                break
+
+        # Final score check from state
         try:
-            health = http.get(f"{ENV_BASE_URL}/health", timeout=10)
-            print(f"[INFO] Health: {health.json()}", flush=True)
+            state_resp = http.get(f"{ENV_BASE_URL}/state", timeout=10)
+            if state_resp.status_code == 200:
+                final_state = state_resp.json()
+                score = float(final_state.get("score", rewards[-1] if rewards else 0.0))
         except Exception:
-            pass
+            score = rewards[-1] if rewards else 0.0
 
-        all_scores: List[float] = []
+        success = score >= success_th
 
-        for i, task in enumerate(TASKS):
-            print(f"[STEP] step={i+1} task={task['id']}", flush=True)
-            score = run_task(client, http, task)
-            print(f"[STEP] step={i+1} reward={score}", flush=True)
-            all_scores.append(score)
+    except Exception as e:
+        # We must still emit [END] even on exception
+        pass
 
-        avg = sum(all_scores)/len(all_scores)
-        passed = all(s >= TASKS[i]["success_threshold"] for i, s in enumerate(all_scores))
-        scores_str = " ".join([f"{t['id']}={all_scores[i]:.4f}" for i, t in enumerate(TASKS)])
-        print(f"[END] task=medical-triage score={avg:.4f} steps={len(TASKS)} {scores_str} passed={passed}", flush=True)
+    rewards_str = ",".join([f"{r:.2f}" for r in rewards])
+    print(f"[END] success={str(success).lower()} steps={steps_taken} rewards={rewards_str}", flush=True)
+    return success
+
+
+def main() -> None:
+    with httpx.Client() as http:
+        for task in TASKS:
+            run_task(client, http, task)
 
 
 if __name__ == "__main__":
