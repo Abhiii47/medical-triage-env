@@ -347,7 +347,7 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
 
 
 def main() -> None:
-    print("START", flush=True)
+    print("[START] task=medical-triage", flush=True)
     
     if not HF_TOKEN:
         print("[ERROR] HF_TOKEN not set. Add it to .env as: HF_TOKEN=hf_your_token_here", flush=True)
@@ -364,17 +364,18 @@ def main() -> None:
 
         all_scores: List[float] = []
 
-        for task in TASKS:
-            print(f"STEP task={task['id']}", flush=True)
+        for i, task in enumerate(TASKS):
+            print(f"[STEP] step={i+1} task={task['id']}", flush=True)
             score = run_task(client, http, task)
+            print(f"[STEP] step={i+1} reward={score}", flush=True)
             all_scores.append(score)
 
         avg = sum(all_scores)/len(all_scores)
-        print(f"SUMMARY easy={all_scores[0]:.4f} medium={all_scores[1]:.4f} hard={all_scores[2]:.4f}", flush=True)
-        print(f"SUMMARY Average={avg:.4f}", flush=True)
+        print(f"[SUMMARY] easy={all_scores[0]:.4f} medium={all_scores[1]:.4f} hard={all_scores[2]:.4f}", flush=True)
+        print(f"[SUMMARY] Average={avg:.4f}", flush=True)
         passed = all(s >= TASKS[i]["success_threshold"] for i, s in enumerate(all_scores))
-        print(f"SUMMARY All_tasks_passed={passed}", flush=True)
-        print("END", flush=True)
+        print(f"[SUMMARY] All_tasks_passed={passed}", flush=True)
+        print(f"[END] task=medical-triage score={avg:.4f} steps={len(TASKS)}", flush=True)
 
 
 if __name__ == "__main__":
