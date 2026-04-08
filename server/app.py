@@ -111,6 +111,15 @@ def list_tasks():
                 "success_criteria": "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all",
                 "expected_score_range": [0.20, 0.65],
                 "grader": "grade_task"
+            },
+            {
+                "id": "chaotic",
+                "difficulty": "hard",
+                "max_steps": 35,
+                "description": "Surge — Dynamic Arrivals with changing priorities",
+                "success_criteria": "Adapt to new arrivals, prioritize correctly, avoid fatal drug interactions",
+                "expected_score_range": [0.15, 0.50],
+                "grader": "grade_task"
             }
         ]
     }

@@ -19,6 +19,8 @@ endpoints:
   - POST /step
   - GET /state
   - GET /health
+  - GET /tasks
+  - POST /grader
 
 observation:
   type: object
@@ -49,11 +51,11 @@ tasks:
   - id: easy_ankle_sprain
     name: "Ankle Sprain"
     description: "Single ankle sprain patient — discharge home"
-    difficulty: easy
+    difficulty: easy_ankle_sprain
     max_steps: 10
     success_criteria: "Triage level 5, order X-Ray, discharge home"
     expected_score_range: [0.70, 1.0]
-    grader: grader.grade_task
+    grader: grade_task
 
   - id: easy
     name: "STEMI Triage"
@@ -62,7 +64,7 @@ tasks:
     max_steps: 15
     success_criteria: "Triage level 1, order ECG, administer Aspirin, admit to Cardiology"
     expected_score_range: [0.70, 1.0]
-    grader: grader.grade_task
+    grader: grade_task
 
   - id: medium
     name: "Sepsis + Opioid Overdose"
@@ -71,7 +73,7 @@ tasks:
     max_steps: 20
     success_criteria: "Avoid Penicillin for P-102, use Naloxone for P-108, correct ward admissions"
     expected_score_range: [0.40, 0.80]
-    grader: grader.grade_task
+    grader: grade_task
 
   - id: hard
     name: "Mass Casualty"
@@ -80,16 +82,16 @@ tasks:
     max_steps: 25
     success_criteria: "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all three"
     expected_score_range: [0.20, 0.65]
-    grader: grader.grade_task
+    grader: grade_task
 
   - id: chaotic
     name: "Surge — Dynamic Arrivals"
     description: "Unpredictable patient arrivals with changing priorities throughout the episode"
-    difficulty: hard
+    difficulty: chaotic
     max_steps: 35
     success_criteria: "Adapt to new arrivals, prioritize correctly, avoid fatal drug interactions"
     expected_score_range: [0.15, 0.50]
-    grader: grader.grade_task
+    grader: grade_task
 
 reward_range: [0.0, 1.0]
 reward_description: >
