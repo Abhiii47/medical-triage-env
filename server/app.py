@@ -120,10 +120,16 @@ class GradingRequest(BaseModel):
 @app.post("/grader")
 def grade_episode(grading_request: GradingRequest):
     task_id = grading_request.task_id
-    state = _env.get_state()
-    if state is None:
+    
+    state_to_grade = grading_request.state if grading_request.state else _env.get_state()
+    history_to_grade = _env.all_patients_history
+    if grading_request.episode and "all_patients_history" in grading_request.episode:
+        history_to_grade = grading_request.episode["all_patients_history"]
+        
+    if state_to_grade is None:
         return {"task_id": task_id, "score": 0.01}
-    score = grade_task(task_id, state, _env.all_patients_history)
+        
+    score = grade_task(task_id, state_to_grade, history_to_grade)
     return {"task_id": task_id, "score": clamp_score(score)}
 
 
