@@ -1,6 +1,6 @@
 import random
 from typing import Dict, Any, List
-from models import IncidentState, Patient, IncidentAction, IncidentObservation
+from models import IncidentState, Patient, IncidentAction, IncidentObservation, VitalsTelemetry
 from tasks import EVALUATIONS_DB, INTERACTIONS_DB
 
 
@@ -103,63 +103,38 @@ class Simulator:
 
         for patient in all_patients:
             cond = patient.hidden_condition
-            if cond not in CRITICAL_CONDITIONS:
-                continue
-            if patient.treatments_given or patient.admitted_ward:
-                continue
+            if cond not in CRITICAL_CONDITIONS or patient.treatments_given or patient.admitted_ward:
+                pass
+            else:
+                deltas = CRITICAL_CONDITIONS[cond]
+                v: VitalsTelemetry = patient.vitals
+                
+                if "O2" in deltas:
+                    v.o2 = max(60, v.o2 + deltas["O2"])
+                    if v.o2 < 80:
+                        self.state.alerts.append(f"CRITICAL: {patient.id} O2 is {v.o2}%!")
+                
+                if "HR" in deltas:
+                    v.hr = min(200, v.hr + deltas["HR"])
+                    if v.hr > 150:
+                        self.state.alerts.append(f"CRITICAL: {patient.id} HR is {v.hr} bpm!")
+                
+                if "BP_sys" in deltas:
+                    v.bp_sys = max(40, v.bp_sys + deltas["BP_sys"])
+                    if v.bp_sys < 60:
+                        self.state.alerts.append(f"CRITICAL: {patient.id} BP crashing: {v.bp_sys}mmHg!")
 
-            deltas = CRITICAL_CONDITIONS[cond]
-            new_vitals = dict(patient.vitals)
-
-            if "O2" in deltas:
-                try:
-                    o2 = int(new_vitals.get("O2", "95%").replace("%", ""))
-                    o2 = max(60, o2 + deltas["O2"])
-                    new_vitals["O2"] = f"{o2}%"
-                    if o2 < 80:
-                        self.state.alerts.append(f"CRITICAL: {patient.id} O2 is {o2}%!")
-                except ValueError:
-                    pass
-
-            if "HR" in deltas:
-                try:
-                    hr = int(new_vitals.get("HR", "80").split("/")[0])
-                    hr = min(200, hr + deltas["HR"])
-                    new_vitals["HR"] = str(hr)
-                    if hr > 150:
-                        self.state.alerts.append(f"CRITICAL: {patient.id} HR is {hr} bpm!")
-                except ValueError:
-                    pass
-
-            if "BP_sys" in deltas:
-                try:
-                    bp = new_vitals.get("BP", "120/80").split("/")
-                    sys = max(40, int(bp[0]) + deltas["BP_sys"])
-                    new_vitals["BP"] = f"{sys}/{bp[1]}"
-                    if sys < 60:
-                        self.state.alerts.append(f"CRITICAL: {patient.id} BP crashing: {sys}mmHg!")
-                except ValueError:
-                    pass
-
-            patient.vitals_history.append(dict(patient.vitals))
+            patient.vitals_history.append(patient.vitals.model_copy(deep=True))
             
             # STOCHASTIC NOISE: Add minor random fluctuations (0.5%) to keep environment feeling dynamic
-            for vk in new_vitals:
-                if vk in ("HR", "O2", "Temp"):
-                    try:
-                        fval = float(new_vitals[vk].replace("%", ""))
-                        noise = random.uniform(0.995, 1.005)
-                        nval = fval * noise
-                        if vk == "O2":
-                            new_vitals[vk] = f"{min(100, int(nval))}%"
-                        elif vk == "Temp":
-                            new_vitals[vk] = f"{nval:.1f}"
-                        else:
-                            new_vitals[vk] = str(int(nval))
-                    except ValueError:
-                        pass
+            noise = random.uniform(0.995, 1.005)
+            patient.vitals.hr = int(patient.vitals.hr * noise)
+            patient.vitals.o2 = min(100, int(patient.vitals.o2 * noise))
+            patient.vitals.temp = round(patient.vitals.temp * random.uniform(0.998, 1.002), 1)
             
-            patient.vitals = new_vitals
+            # BP Jitter
+            patient.vitals.bp_sys = int(patient.vitals.bp_sys * random.uniform(0.99, 1.01))
+            patient.vitals.bp_dia = int(patient.vitals.bp_dia * random.uniform(0.99, 1.01))
 
         empty_beds = [b for b, p in self.state.active_beds.items() if p is None]
         for b in empty_beds:
@@ -178,50 +153,26 @@ class Simulator:
     def _enrich_patient_obs(self, p: Patient) -> dict:
         obs = {
             "id": p.id,
-            "vitals": p.vitals,
+            "vitals": p.vitals.to_dict(),  # Keep strings for the Agent LLM
             "time_in_queue": self.state.current_step - p.arrival_step,
             "deterioration_trend": "stable",
             "vitals_delta": {}
         }
         if len(p.vitals_history) >= 1:
-            prev = p.vitals_history[-1]
-            curr = p.vitals
+            prev: VitalsTelemetry = p.vitals_history[-1]
+            curr: VitalsTelemetry = p.vitals
             delta = {}
-            worsening = False
-            improving = False
-
-            if "HR" in prev and "HR" in curr:
-                try:
-                    p_hr = int(prev["HR"].split("/")[0])
-                    c_hr = int(curr["HR"].split("/")[0])
-                    d_hr = c_hr - p_hr
-                    if d_hr != 0:
-                        delta["HR"] = d_hr
-                    if d_hr >= 5:
-                        worsening = True
-                    if d_hr <= -5:
-                        improving = True
-                except Exception:
-                    pass
-
-            if "O2" in prev and "O2" in curr:
-                try:
-                    p_o2 = int(prev["O2"].replace("%", ""))
-                    c_o2 = int(curr["O2"].replace("%", ""))
-                    d_o2 = c_o2 - p_o2
-                    if d_o2 != 0:
-                        delta["O2"] = d_o2
-                    if d_o2 <= -2:
-                        worsening = True
-                    if d_o2 >= 2:
-                        improving = True
-                except Exception:
-                    pass
-
+            
+            d_hr = curr.hr - prev.hr
+            if d_hr != 0: delta["HR"] = d_hr
+            
+            d_o2 = curr.o2 - prev.o2
+            if d_o2 != 0: delta["O2"] = d_o2
+            
             obs["vitals_delta"] = delta
-            if worsening:
+            if d_hr >= 5 or d_o2 <= -2:
                 obs["deterioration_trend"] = "worsening"
-            elif improving:
+            elif d_hr <= -5 or d_o2 >= 2:
                 obs["deterioration_trend"] = "improving"
 
         return obs
@@ -247,6 +198,10 @@ class Simulator:
             else:
                 bed_sum[b] = "Empty"
 
+        # SF BEST PRACTICE: Provide both summary and structured telemetry
+        all_patients = list(self.state.queue) + [p for p in self.state.active_beds.values() if p]
+        telemetry = {p.id: p.vitals.model_copy(deep=True) for p in all_patients}
+
         return IncidentObservation(
             episode_id=self.state.episode_id,
             queue_summary=q_sum,
@@ -254,5 +209,6 @@ class Simulator:
             alerts=self.state.alerts[-5:],
             current_step=self.state.current_step,
             max_steps=self.state.max_steps,
-            action_feedback=self.action_feedback
+            action_feedback=self.action_feedback,
+            telemetry=telemetry
         )

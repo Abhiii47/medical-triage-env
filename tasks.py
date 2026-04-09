@@ -1,6 +1,7 @@
 import copy
 import random
 from typing import Dict, Any
+from models import VitalsTelemetry
 
 EVALUATIONS_DB = {
     "ECG": {"STEMI": "ST elevation in leads II, III, aVF (Inferior STEMI).", "Sepsis": "Normal Sinus Rhythm.", "Ankle Sprain": "Sinus Tachycardia."},
@@ -22,7 +23,7 @@ SCENARIOS: Dict[str, Any] = {
         "patients": [
             {
                 "id": "P-101", "age": 65,
-                "vitals": {"HR": "110", "BP": "150/90", "O2": "94%", "Temp": "37.1"},
+                "vitals": VitalsTelemetry(hr=110, bp_sys=150, bp_dia=90, o2=94, temp=37.1),
                 "symptoms": ["Crushing chest pain", "Diaphoresis", "Left arm radiation"],
                 "history": ["Hypertension", "Smoker"],
                 "hidden_condition": "STEMI"
@@ -35,7 +36,7 @@ SCENARIOS: Dict[str, Any] = {
         "patients": [
             {
                 "id": "P-109", "age": 22,
-                "vitals": {"HR": "85", "BP": "120/80", "O2": "99%", "Temp": "36.8"},
+                "vitals": VitalsTelemetry(hr=85, bp_sys=120, bp_dia=80, o2=99, temp=36.8),
                 "symptoms": ["Ankle pain", "Swelling", "Difficulty walking"],
                 "history": ["None"],
                 "hidden_condition": "Ankle Sprain"
@@ -48,14 +49,14 @@ SCENARIOS: Dict[str, Any] = {
         "patients": [
             {
                 "id": "P-102", "age": 78,
-                "vitals": {"HR": "125", "BP": "85/50", "O2": "92%", "Temp": "39.2"},
+                "vitals": VitalsTelemetry(hr=125, bp_sys=85, bp_dia=50, o2=92, temp=39.2),
                 "symptoms": ["Confusion", "Fever", "Chills", "Decreased urination"],
                 "history": ["UTI recurrences", "Penicillin Allergy"],
                 "hidden_condition": "Sepsis"
             },
             {
                 "id": "P-108", "age": 28,
-                "vitals": {"HR": "40", "BP": "90/50", "O2": "82%", "Temp": "36.2"},
+                "vitals": VitalsTelemetry(hr=40, bp_sys=90, bp_dia=50, o2=82, temp=36.2),
                 "symptoms": ["Pinpoint pupils", "Unresponsive", "Respiratory depression"],
                 "history": ["Substance Abuse"],
                 "hidden_condition": "Opioid Overdose"
@@ -68,21 +69,21 @@ SCENARIOS: Dict[str, Any] = {
         "patients": [
             {
                 "id": "P-104", "age": 45,
-                "vitals": {"HR": "140", "BP": "70/40", "O2": "88%", "Temp": "36.5"},
+                "vitals": VitalsTelemetry(hr=140, bp_sys=70, bp_dia=40, o2=88, temp=36.5),
                 "symptoms": ["Unresponsive", "Massive trauma from MVA"],
                 "history": ["Unknown"],
                 "hidden_condition": "Hemorrhagic Shock"
             },
             {
                 "id": "P-107", "age": 62,
-                "vitals": {"HR": "85", "BP": "190/110", "O2": "96%", "Temp": "37.4"},
+                "vitals": VitalsTelemetry(hr=85, bp_sys=190, bp_dia=110, o2=96, temp=37.4),
                 "symptoms": ["Facial droop", "Slurred speech", "Left arm weakness"],
                 "history": ["Hypertension"],
                 "hidden_condition": "Stroke"
             },
             {
                 "id": "P-105", "age": 9,
-                "vitals": {"HR": "130", "BP": "100/60", "O2": "90%", "Temp": "37.5"},
+                "vitals": VitalsTelemetry(hr=130, bp_sys=100, bp_dia=60, o2=90, temp=37.5),
                 "symptoms": ["Severe wheezing", "Accessory muscle use", "Can't speak in full sentences"],
                 "history": ["Asthma"],
                 "hidden_condition": "Status Asthmaticus"
@@ -95,14 +96,14 @@ SCENARIOS: Dict[str, Any] = {
         "patients": [
             {
                 "id": "P-201", "age": 55,
-                "vitals": {"HR": "118", "BP": "155/95", "O2": "93%", "Temp": "37.2"},
+                "vitals": VitalsTelemetry(hr=118, bp_sys=155, bp_dia=95, o2=93, temp=37.2),
                 "symptoms": ["Chest tightness", "Shortness of breath", "Jaw pain"],
                 "history": ["Diabetes", "Hypertension"],
                 "hidden_condition": "STEMI"
             },
             {
                 "id": "P-202", "age": 34,
-                "vitals": {"HR": "38", "BP": "88/52", "O2": "80%", "Temp": "36.1"},
+                "vitals": VitalsTelemetry(hr=38, bp_sys=88, bp_dia=52, o2=80, temp=36.1),
                 "symptoms": ["Unresponsive", "Slow shallow breathing", "Pinpoint pupils"],
                 "history": ["Heroin use"],
                 "hidden_condition": "Opioid Overdose"
@@ -113,7 +114,7 @@ SCENARIOS: Dict[str, Any] = {
             "8": [
                 {
                     "id": "P-203", "age": 71,
-                    "vitals": {"HR": "128", "BP": "82/48", "O2": "91%", "Temp": "39.5"},
+                    "vitals": VitalsTelemetry(hr=128, bp_sys=82, bp_dia=48, o2=91, temp=39.5),
                     "symptoms": ["High fever", "Confusion", "Rigors", "Dark urine"],
                     "history": ["Diabetes", "Penicillin Allergy"],
                     "hidden_condition": "Sepsis"
@@ -122,14 +123,14 @@ SCENARIOS: Dict[str, Any] = {
             "16": [
                 {
                     "id": "P-204", "age": 19,
-                    "vitals": {"HR": "88", "BP": "118/76", "O2": "99%", "Temp": "36.9"},
+                    "vitals": VitalsTelemetry(hr=88, bp_sys=118, bp_dia=76, o2=99, temp=36.9),
                     "symptoms": ["Twisted ankle", "Pain on weight-bearing", "Mild swelling"],
                     "history": ["None"],
                     "hidden_condition": "Ankle Sprain"
                 },
                 {
                     "id": "P-205", "age": 67,
-                    "vitals": {"HR": "92", "BP": "195/115", "O2": "95%", "Temp": "37.3"},
+                    "vitals": VitalsTelemetry(hr=92, bp_sys=195, bp_dia=115, o2=95, temp=37.3),
                     "symptoms": ["Sudden right-sided weakness", "Slurred speech", "Confusion"],
                     "history": ["Atrial fibrillation", "Hypertension"],
                     "hidden_condition": "Stroke"
@@ -138,7 +139,7 @@ SCENARIOS: Dict[str, Any] = {
             "24": [
                 {
                     "id": "P-206", "age": 7,
-                    "vitals": {"HR": "135", "BP": "98/58", "O2": "89%", "Temp": "37.6"},
+                    "vitals": VitalsTelemetry(hr=135, bp_sys=98, bp_dia=58, o2=89, temp=37.6),
                     "symptoms": ["Severe wheezing", "Retractions", "Unable to complete sentences"],
                     "history": ["Asthma", "Multiple prior intubations"],
                     "hidden_condition": "Status Asthmaticus"
@@ -159,33 +160,13 @@ def get_scenario(difficulty: str) -> Dict[str, Any]:
         all_patients_to_jitter.extend(ps)
 
     for patient in all_patients_to_jitter:
-        v = patient["vitals"]
-        if "HR" in v:
-            try:
-                hr = int(v["HR"].split("/")[0])
-                jitter = random.uniform(0.95, 1.05)
-                v["HR"] = str(max(30, min(200, int(hr * jitter))))
-            except ValueError:
-                pass
-        if "O2" in v:
-            try:
-                o2 = int(v["O2"].replace("%", ""))
-                jitter = random.uniform(0.95, 1.05)
-                v["O2"] = f"{max(60, min(100, int(o2 * jitter)))}%"
-            except ValueError:
-                pass
-        if "BP" in v:
-            try:
-                sys_p, dia = map(int, v["BP"].split("/"))
-                v["BP"] = f"{max(40, int(sys_p * random.uniform(0.95, 1.05)))}/{max(30, int(dia * random.uniform(0.95, 1.05)))}"
-            except ValueError:
-                pass
-        if "Temp" in v:
-            try:
-                temp = float(v["Temp"])
-                jitter = random.uniform(0.95, 1.05)
-                v["Temp"] = f"{max(34.0, min(42.0, temp * jitter)):.1f}"
-            except ValueError:
-                pass
+        v: VitalsTelemetry = patient["vitals"]
+        jitter = random.uniform(0.95, 1.05)
+        
+        v.hr = max(30, min(200, int(v.hr * jitter)))
+        v.o2 = max(60, min(100, int(v.o2 * jitter)))
+        v.bp_sys = max(40, int(v.bp_sys * random.uniform(0.95, 1.05)))
+        v.bp_dia = max(30, int(v.bp_dia * random.uniform(0.95, 1.05)))
+        v.temp = round(max(34.0, min(42.0, v.temp * random.uniform(0.99, 1.01))), 1)
 
     return scenario

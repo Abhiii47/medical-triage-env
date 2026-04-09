@@ -1,12 +1,32 @@
+import uuid
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional, Any
-import uuid
+
+
+class VitalsTelemetry(BaseModel):
+    hr: int = 80
+    bp_sys: int = 120
+    bp_dia: int = 80
+    o2: int = 100
+    temp: float = 37.0
+
+    def to_dict(self) -> Dict[str, str]:
+        """Convert to the legacy string-dictionary format for backward compatibility."""
+        return {
+            "HR": str(self.hr),
+            "BP": f"{self.bp_sys}/{self.bp_dia}",
+            "O2": f"{self.o2}%",
+            "Temp": f"{self.temp:.1f}"
+        }
+
+    def __str__(self) -> str:
+        return f"HR {self.hr}, BP {self.bp_sys}/{self.bp_dia}, O2 {self.o2}%, Temp {self.temp:.1f}"
 
 
 class Patient(BaseModel):
     id: str
     age: int
-    vitals: Dict[str, str]
+    vitals: VitalsTelemetry
     symptoms: List[str]
     history: List[str]
     tests_ordered: List[str] = Field(default_factory=list)
@@ -17,7 +37,7 @@ class Patient(BaseModel):
     discharged: bool = False
     is_stable: bool = True
     hidden_condition: Optional[str] = None
-    vitals_history: List[Dict[str, str]] = Field(default_factory=list)
+    vitals_history: List[VitalsTelemetry] = Field(default_factory=list)
     arrival_step: int = 0
 
 
@@ -43,6 +63,7 @@ class IncidentObservation(BaseModel):
     current_step: int
     max_steps: int = 0
     action_feedback: str
+    telemetry: Optional[Dict[str, VitalsTelemetry]] = None  # New structured field for SF parity
 
 
 class IncidentAction(BaseModel):
