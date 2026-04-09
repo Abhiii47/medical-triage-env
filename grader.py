@@ -1,102 +1,158 @@
+"""
+Medical Triage Clinical Auditor (Grader)
+Determines the performance score based on clinical accuracy, safety, 
+and disposition efficiency. Adheres to strict Meta OpenEnv Phase 2 specs.
+"""
 from models import VitalsTelemetry
 
-EXPECTED = {
-    "STEMI": {"level": 1, "tests": ["ECG"], "treat": ["Aspirin", "Nitroglycerin", "Heparin"], "ward": "Cardiology"},
-    "Sepsis": {"level": 2, "tests": ["Blood Test"], "treat": ["Vancomycin", "Ceftriaxone", "Meropenem", "Piperacillin", "Fluids", "IV Fluids"], "ward": "ICU"},
-    "Ankle Sprain": {"level": 5, "tests": ["X-Ray"], "treat": [], "ward": None},
-    "Hemorrhagic Shock": {"level": 1, "tests": ["CT Scan"], "treat": ["Blood Transfusion", "IV Fluids", "Fluids", "Transfusion"], "ward": "Surgery"},
-    "Status Asthmaticus": {"level": 1, "tests": [], "treat": ["Albuterol", "Salbutamol", "Epinephrine", "Steroids", "Oxygen"], "ward": "ICU"},
-    "Stroke": {"level": 2, "tests": ["CT Scan"], "treat": ["tPA", "Alteplase", "Aspirin"], "ward": "Neurology"},
-    "Opioid Overdose": {"level": 1, "tests": ["Tox Screen"], "treat": ["Naloxone"], "ward": "ICU"},
+# Clinical Gold Standards for Triage & Disposition
+CLINICAL_STANDARDS = {
+    "STEMI": {
+        "level": 1, 
+        "tests": ["ECG"], 
+        "treat": ["Aspirin", "Nitroglycerin", "Heparin"], 
+        "ward": "Cardiology"
+    },
+    "Sepsis": {
+        "level": 2, 
+        "tests": ["Blood Test"], 
+        "treat": ["Vancomycin", "Ceftriaxone", "Meropenem", "Piperacillin", "Fluids", "IV Fluids"], 
+        "ward": "ICU"
+    },
+    "Ankle Sprain": {
+        "level": 5, 
+        "tests": ["X-Ray"], 
+        "treat": [], 
+        "ward": None
+    },
+    "Hemorrhagic Shock": {
+        "level": 1, 
+        "tests": ["CT Scan"], 
+        "treat": ["Blood Transfusion", "IV Fluids", "Fluids", "Transfusion"], 
+        "ward": "Surgery"
+    },
+    "Status Asthmaticus": {
+        "level": 1, 
+        "tests": [], 
+        "treat": ["Albuterol", "Salbutamol", "Epinephrine", "Steroids", "Oxygen"], 
+        "ward": "ICU"
+    },
+    "Stroke": {
+        "level": 2, 
+        "tests": ["CT Scan"], 
+        "treat": ["tPA", "Alteplase", "Aspirin"], 
+        "ward": "Neurology"
+    },
+    "Opioid Overdose": {
+        "level": 1, 
+        "tests": ["Tox Screen"], 
+        "treat": ["Naloxone"], 
+        "ward": "ICU"
+    },
 }
 
 class TriageRubric:
-    """A formal scoring rubric for Medical Triage, inspired by San Francisco winning projects."""
+    """
+    Formally evaluates the quality of care provided to a single patient.
+    Weights are distributed based on clinical significance (20% Triage, 30% Treatment, etc.).
+    """
     
     @staticmethod
-    def evaluate_patient(p_dict) -> float:
-        p_score = 0.0
-        hidden_condition = p_dict.get("hidden_condition")
-        exp = EXPECTED.get(hidden_condition, {})
-        if not exp: return 0.0
+    def evaluate_patient_outcome(patient_record: dict) -> float:
+        score = 0.0
+        condition = patient_record.get("hidden_condition")
+        standards = CLINICAL_STANDARDS.get(condition, {})
+        
+        if not standards:
+            return 0.0
 
-        # 1. Triage Accuracy (20%)
-        if p_dict.get("triage_level") == exp.get("level"):
-            p_score += 0.20
+        # 1. Triage Accuracy (20%) - Critical for hospital resource management
+        if patient_record.get("triage_level") == standards.get("level"):
+            score += 0.20
 
-        # 2. Diagnostic Accuracy (20%)
-        required_tests = exp.get("tests", [])
-        tests_ordered = p_dict.get("tests_ordered", [])
+        # 2. Diagnostic Integrity (20%) - Ensuring appropriate workup
+        required_tests = standards.get("tests", [])
+        tests_ordered = patient_record.get("tests_ordered", [])
         if not required_tests:
-            p_score += 0.20
+            score += 0.20
         elif any(t in tests_ordered for t in required_tests):
-            p_score += 0.20
+            score += 0.20
 
-        # 3. Treatment Accuracy & Stabilization (30%)
-        accepted_treats = exp.get("treat", [])
-        treatments_given = p_dict.get("treatments_given", [])
-        is_critical = exp.get("level") in (1, 2)
-        has_treatment = any(t in treatments_given for t in accepted_treats) if accepted_treats else True
+        # 3. Clinical Stabilization (30%) - Correct medication/intervention
+        accepted_treats = standards.get("treat", [])
+        treatments_given = patient_record.get("treatments_given", [])
+        is_emergent = standards.get("level") in (1, 2)
+        has_stabilized = any(t in treatments_given for t in accepted_treats) if accepted_treats else True
 
-        if has_treatment:
-            p_score += 0.30
-        elif is_critical and p_dict.get("admitted_ward"):
-            # Penalty for admitting without stabilization
-            p_score -= 0.20
+        if has_stabilized:
+            score += 0.30
+        elif is_emergent and patient_record.get("admitted_ward"):
+            # Penalize admitting unstable critical patients without stabilization
+            score -= 0.20
 
-        # 4. Correct Disposition (30%)
-        target_ward = exp.get("ward")
-        admitted_ward = p_dict.get("admitted_ward")
-        discharged = p_dict.get("discharged")
+        # 4. Final Disposition (30%) - Correct ward vs home discharge
+        target_ward = standards.get("ward")
+        actual_ward = patient_record.get("admitted_ward")
+        discharged = patient_record.get("discharged")
 
         if target_ward:
-            if admitted_ward == target_ward:
-                p_score += 0.30
-        elif discharged and not admitted_ward:
-            p_score += 0.30
+            if actual_ward == target_ward:
+                score += 0.30
+        elif discharged and not actual_ward:
+            score += 0.30
 
-        return p_score
+        return score
 
 def grade(state, all_patients_history) -> float:
+    """
+    Global grading function. 
+    Calculates the mean score across all patients and applies system-level penalties.
+    """
     try:
-        score = 0.0
-        max_score = 0.0
-        unnecessary_penalty = 0.0
+        total_score = 0.0
+        max_possible = 0.0
+        diagnostic_waste_penalty = 0.0
         
-        # Robust dictionary conversion
-        if hasattr(state, "model_dump"): sd = state.model_dump()
-        else: sd = state if isinstance(state, dict) else {}
+        # Safe model state normalization
+        if hasattr(state, "model_dump"): 
+            state_data = state.model_dump()
+        else: 
+            state_data = state if isinstance(state, dict) else {}
 
-        fatal_errors = sd.get("fatal_errors", [])
-        
-        if all_patients_history is None: all_patients_history = []
+        fatal_errors = state_data.get("fatal_errors", [])
+        if all_patients_history is None: 
+            all_patients_history = []
 
-        for p in all_patients_history:
-            max_score += 1.0
-            if hasattr(p, "model_dump"): pd = p.model_dump()
-            else: pd = p if isinstance(p, dict) else {}
+        for patient in all_patients_history:
+            max_possible += 1.0
+            if hasattr(patient, "model_dump"): 
+                p_record = patient.model_dump()
+            else: 
+                p_record = patient if isinstance(patient, dict) else {}
             
-            # Use the Rubric for logic
-            score += TriageRubric.evaluate_patient(pd)
+            # Audit clinical quality
+            total_score += TriageRubric.evaluate_patient_outcome(p_record)
             
-            # Penalize unnecessary tests
-            exp = EXPECTED.get(pd.get("hidden_condition"), {})
-            for t in pd.get("tests_ordered", []):
-                if t not in exp.get("tests", []):
-                    unnecessary_penalty += 0.05
+            # Penalize excessive/wasteful diagnostics (Medical necessity logic)
+            standards = CLINICAL_STANDARDS.get(p_record.get("hidden_condition"), {})
+            for test in p_record.get("tests_ordered", []):
+                if test not in standards.get("tests", []):
+                    diagnostic_waste_penalty += 0.02
 
-        score -= 0.50 * len(fatal_errors)
-        score -= unnecessary_penalty
+        total_score -= 0.50 * len(fatal_errors) # Major safety penalty
+        total_score -= diagnostic_waste_penalty
 
-        if max_score > 0:
-            final = score / max_score
+        if max_possible > 0:
+            final_score = total_score / max_possible
         else:
-            final = 0.0
+            final_score = 0.0
 
-        # Deterministic range clamping for Phase 2 compliance
-        return round(max(0.01, min(0.99, final)), 4)
+        # Strict range compliance (0.01 to 0.99) for Meta deep-validation
+        return round(max(0.01, min(0.99, final_score)), 4)
     except Exception:
+        # Fallback to a valid baseline numeric score to avoid environmental failure
         return 0.01
 
 def grade_task(task_id: str, state, all_patients_history) -> float:
+    """Entry point for many Evaluation Frameworks."""
     return grade(state, all_patients_history)

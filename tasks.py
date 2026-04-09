@@ -1,3 +1,8 @@
+"""
+Triage Scenarios & Clinical Database
+Defines archetypes, deterioration paths, and test results
+based on standard emergency medicine protocols.
+"""
 import copy
 import random
 from typing import Dict, Any

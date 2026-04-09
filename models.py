@@ -1,9 +1,18 @@
+"""
+Medical Triage Environment - Data Models
+This module defines the core data structures for the hospital simulation,
+adhering to OpenEnv and Gymnasium standards.
+"""
 import uuid
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional, Any
 
 
 class VitalsTelemetry(BaseModel):
+    """
+    Structured telemetry for patient vital signs.
+    Used for objective clinical tracking and deterioration simulation.
+    """
     hr: int = 80
     bp_sys: int = 120
     bp_dia: int = 80
@@ -24,6 +33,10 @@ class VitalsTelemetry(BaseModel):
 
 
 class Patient(BaseModel):
+    """
+    Represents a patient in the ED (Emergency Department).
+    Tracks clinical state, treatment history, and disposition.
+    """
     id: str
     age: int
     vitals: VitalsTelemetry
