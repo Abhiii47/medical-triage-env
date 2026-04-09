@@ -332,7 +332,7 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
 
             
             clean_act = act_str.replace("'", '"')
-            print(f"[STEP]  step={step} action={clean_act} reward={reward:.2f} done={str(done).lower()} error={error_msg}", flush=True)
+            print(f"[STEP] step={step} action={clean_act} reward={reward:.2f} done={str(done).lower()} error={error_msg}", flush=True)
 
             history.append(f"Step {step}: {act_str} -> {reward:+.4f}")
 
@@ -355,7 +355,7 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
 
     
     rewards_str = ",".join([f"{r:.2f}" for r in rewards])
-    print(f"[END]   success={str(success).lower()} steps={steps_taken} rewards={rewards_str}", flush=True)
+    print(f"[END] success={str(success).lower()} steps={steps_taken} score={score:.4f} rewards={rewards_str}", flush=True)
     return score
 
 
