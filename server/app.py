@@ -85,7 +85,7 @@ def list_tasks():
                 "max_steps": 15,
                 "description": "Single STEMI patient — identify and admit to Cardiology",
                 "success_criteria": "Triage level 1, order ECG, treat with Aspirin, admit to Cardiology",
-                "expected_score_range": [0.0, 1.0],
+                "expected_score_range": [0.01, 0.99],
                 "grader": "grade_task"
             },
             {
@@ -94,7 +94,7 @@ def list_tasks():
                 "max_steps": 20,
                 "description": "Sepsis (Penicillin allergy) + Opioid Overdose — avoid fatal interactions",
                 "success_criteria": "Avoid Penicillin for P-102, use Naloxone for P-108, admit both correctly",
-                "expected_score_range": [0.0, 1.0],
+                "expected_score_range": [0.01, 0.99],
                 "grader": "grade_task"
             },
             {
@@ -103,7 +103,7 @@ def list_tasks():
                 "max_steps": 25,
                 "description": "Mass casualty: Hemorrhagic Shock + Stroke + Asthmatic child",
                 "success_criteria": "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all",
-                "expected_score_range": [0.0, 1.0],
+                "expected_score_range": [0.01, 0.99],
                 "grader": "grade_task"
             }
         ]
@@ -120,7 +120,10 @@ class GradingRequest(BaseModel):
 @app.post("/grader")
 def grade_episode(grading_request: GradingRequest):
     task_id = grading_request.task_id
-    score = grade_task(task_id, _env.get_state(), _env.all_patients_history)
+    state = _env.get_state()
+    if state is None:
+        return {"task_id": task_id, "score": 0.01}
+    score = grade_task(task_id, state, _env.all_patients_history)
     return {"task_id": task_id, "score": clamp_score(score)}
 
 

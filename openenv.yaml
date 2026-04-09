@@ -19,8 +19,6 @@ endpoints:
   - POST /step
   - GET /state
   - GET /health
-  - GET /tasks
-  - POST /grader
 
 observation:
   type: object
@@ -54,7 +52,7 @@ tasks:
     difficulty: easy
     max_steps: 15
     success_criteria: "Triage level 1, order ECG, administer Aspirin, admit to Cardiology"
-    expected_score_range: [0.0, 1.0]
+    expected_score_range: [0.01, 0.99]
     grader: grade_task
 
   - id: medium
@@ -63,7 +61,7 @@ tasks:
     difficulty: medium
     max_steps: 20
     success_criteria: "Avoid Penicillin for P-102, use Naloxone for P-108, correct ward admissions"
-    expected_score_range: [0.0, 1.0]
+    expected_score_range: [0.01, 0.99]
     grader: grade_task
 
   - id: hard
@@ -72,10 +70,10 @@ tasks:
     difficulty: hard
     max_steps: 25
     success_criteria: "Prioritize P-104 (Level 1), avoid blood thinners, correct wards for all three"
-    expected_score_range: [0.0, 1.0]
+    expected_score_range: [0.01, 0.99]
     grader: grade_task
 
-reward_range: [0.0, 1.0]
+reward_range: [0.01, 0.99]
 reward_description: >
   Step rewards provide partial progress signals throughout the episode.
   The terminal reward is a deterministic grade (0.01–0.99) based on correct
