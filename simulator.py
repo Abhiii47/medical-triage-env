@@ -1,3 +1,4 @@
+import random
 from typing import Dict, Any, List
 from models import IncidentState, Patient, IncidentAction, IncidentObservation
 from tasks import EVALUATIONS_DB, INTERACTIONS_DB
@@ -141,6 +142,23 @@ class Simulator:
                     pass
 
             patient.vitals_history.append(dict(patient.vitals))
+            
+            # STOCHASTIC NOISE: Add minor random fluctuations (0.5%) to keep environment feeling dynamic
+            for vk in new_vitals:
+                if vk in ("HR", "O2", "Temp"):
+                    try:
+                        fval = float(new_vitals[vk].replace("%", ""))
+                        noise = random.uniform(0.995, 1.005)
+                        nval = fval * noise
+                        if vk == "O2":
+                            new_vitals[vk] = f"{min(100, int(nval))}%"
+                        elif vk == "Temp":
+                            new_vitals[vk] = f"{nval:.1f}"
+                        else:
+                            new_vitals[vk] = str(int(nval))
+                    except ValueError:
+                        pass
+            
             patient.vitals = new_vitals
 
         empty_beds = [b for b, p in self.state.active_beds.items() if p is None]

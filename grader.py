@@ -46,42 +46,51 @@ def grade(state, all_patients_history) -> float:
             hidden_condition = p_dict.get("hidden_condition")
             exp = EXPECTED.get(hidden_condition, {})
 
+            # 1. Triage Accuracy
             if p_dict.get("triage_level") == exp.get("level"):
-                p_score += 0.25
+                p_score += 0.20
 
+            # 2. Diagnostic Accuracy
             required_tests = exp.get("tests", [])
             tests_ordered = p_dict.get("tests_ordered", [])
             if not required_tests:
-                p_score += 0.25
+                p_score += 0.20
             elif any(t in tests_ordered for t in required_tests):
-                p_score += 0.25
+                p_score += 0.20
 
             for t in tests_ordered:
                 if t not in required_tests:
-                    unnecessary_penalty += 0.10
+                    unnecessary_penalty += 0.05
 
+            # 3. Treatment Accuracy & Stabilization
             accepted_treats = exp.get("treat", [])
             treatments_given = p_dict.get("treatments_given", [])
-            if not accepted_treats:
-                p_score += 0.25
-            elif any(t in treatments_given for t in accepted_treats):
-                p_score += 0.25
+            
+            is_critical = exp.get("level") in (1, 2)
+            has_treatment = any(t in treatments_given for t in accepted_treats) if accepted_treats else True
 
+            if has_treatment:
+                p_score += 0.30
+            elif is_critical and p_dict.get("admitted_ward"):
+                # CRITICAL PENALTY: Admitted a crashing patient without stabilizing them first
+                unnecessary_penalty += 0.20
+
+            # 4. Correct Disposition
             target_ward = exp.get("ward")
             admitted_ward = p_dict.get("admitted_ward")
             discharged = p_dict.get("discharged")
 
             if target_ward:
                 if admitted_ward == target_ward:
-                    p_score += 0.25
+                    p_score += 0.30
                     outcomes_achieved += 1
             elif discharged and not admitted_ward:
-                p_score += 0.25
+                p_score += 0.30
                 outcomes_achieved += 1
 
             score += p_score
 
-        score -= 0.40 * len(fatal_errors)
+        score -= 0.50 * len(fatal_errors)
         score -= unnecessary_penalty
 
         n_patients = len(all_patients_history)
@@ -94,6 +103,10 @@ def grade(state, all_patients_history) -> float:
             final = score / max_score
         else:
             final = 0.0
+
+        # CLINICAL EXCELLENCE BONUS: If all patients were triaged correctly AND treated
+        if outcomes_achieved == n_patients and unnecessary_penalty == 0 and not fatal_errors:
+            final += 0.05
 
         return round(max(0.01, min(0.99, final)), 4)
     except Exception:

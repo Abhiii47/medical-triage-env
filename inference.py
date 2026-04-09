@@ -37,6 +37,7 @@ TASKS = [
     {"id": "easy", "name": "STEMI Triage", "max_steps": 15, "success_threshold": 0.60},
     {"id": "medium", "name": "Sepsis + Opioid Overdose", "max_steps": 20, "success_threshold": 0.45},
     {"id": "hard", "name": "Mass Casualty", "max_steps": 25, "success_threshold": 0.30},
+    {"id": "chaotic", "name": "ER Surge", "max_steps": 40, "success_threshold": 0.25},
 ]
 
 SYSTEM_PROMPT = """You are a senior emergency room triage nurse with 20 years of clinical experience. You make fast, accurate decisions that save lives.
@@ -74,13 +75,15 @@ Complete each patient's full protocol as fast as possible. Every unnecessary 'wa
 If multiple patients are present, prioritize the most critical (Level 1) first.
 
 ## OUTPUT FORMAT
-Respond ONLY with a single valid JSON object — no explanation, no markdown, no extra text:
-{"action_type": "assess", "patient_id": "P-101"}
-{"action_type": "order_test", "patient_id": "P-101", "target": "ECG"}
-{"action_type": "triage", "patient_id": "P-101", "target": "1"}
-{"action_type": "treat", "patient_id": "P-101", "target": "Aspirin"}
-{"action_type": "admit", "patient_id": "P-101", "target": "Cardiology"}
-{"action_type": "wait"}"""
+Respond ONLY with a single valid JSON object containing your reasoning and chosen action — no explanation, no markdown:
+{
+  "reasoning": "Brief clinical justification for the next step",
+  "action_type": "assess", 
+  "patient_id": "P-101"
+}
+{"reasoning": "High fever and hypotension suggest sepsis; ordering labs.", "action_type": "order_test", "patient_id": "P-102", "target": "Blood Test"}
+{"reasoning": "Patient stabilized; admitting to ICU for monitoring.", "action_type": "admit", "patient_id": "P-102", "target": "ICU"}
+{"reasoning": "No active tasks; waiting.", "action_type": "wait"}"""
 
 
 def _pick_priority_patient(obs: dict) -> Optional[str]:
@@ -300,6 +303,11 @@ def run_task(client: OpenAI, http: httpx.Client, task: dict) -> float:
                 break
 
             action = get_action(client, step, obs, last_reward, history)
+            
+            # AGENTIC REASONING: Print reasoning for logs/judges
+            reasoning = action.get("reasoning", "No explicit reasoning provided.")
+            print(f"[DEBUG] reasoning={reasoning}", flush=True)
+
             error_msg = "null"
 
             try:

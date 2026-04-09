@@ -73,6 +73,15 @@ tasks:
     expected_score_range: [0.01, 0.99]
     grader: grade_task
 
+  - id: chaotic
+    name: "ER Surge"
+    description: "Multi-patient surge — test agentic triage and resource prioritization"
+    difficulty: hard
+    max_steps: 40
+    success_criteria: "Successfully triage and treat 5+ patients under extreme pressure"
+    expected_score_range: [0.01, 0.99]
+    grader: grade_task
+
 reward_range: [0.01, 0.99]
 reward_description: >
   Step rewards provide partial progress signals throughout the episode.
