@@ -5,7 +5,7 @@ and disposition efficiency. Adheres to strict Meta OpenEnv Phase 2 specs.
 """
 from models import VitalsTelemetry
 
-# Clinical Gold Standards for Triage & Disposition
+
 CLINICAL_STANDARDS = {
     "STEMI": {
         "level": 1, 
@@ -66,11 +66,11 @@ class TriageRubric:
         if not standards:
             return 0.0
 
-        # 1. Triage Accuracy (20%) - Critical for hospital resource management
+        
         if patient_record.get("triage_level") == standards.get("level"):
             score += 0.20
 
-        # 2. Diagnostic Integrity (20%) - Ensuring appropriate workup
+        
         required_tests = standards.get("tests", [])
         tests_ordered = patient_record.get("tests_ordered", [])
         if not required_tests:
@@ -78,7 +78,7 @@ class TriageRubric:
         elif any(t in tests_ordered for t in required_tests):
             score += 0.20
 
-        # 3. Clinical Stabilization (30%) - Correct medication/intervention
+    
         accepted_treats = standards.get("treat", [])
         treatments_given = patient_record.get("treatments_given", [])
         is_emergent = standards.get("level") in (1, 2)
@@ -87,10 +87,10 @@ class TriageRubric:
         if has_stabilized:
             score += 0.30
         elif is_emergent and patient_record.get("admitted_ward"):
-            # Penalize admitting unstable critical patients without stabilization
+            
             score -= 0.20
 
-        # 4. Final Disposition (30%) - Correct ward vs home discharge
+        
         target_ward = standards.get("ward")
         actual_ward = patient_record.get("admitted_ward")
         discharged = patient_record.get("discharged")
@@ -113,7 +113,7 @@ def grade(state, all_patients_history) -> float:
         max_possible = 0.0
         diagnostic_waste_penalty = 0.0
         
-        # Safe model state normalization
+        
         if hasattr(state, "model_dump"): 
             state_data = state.model_dump()
         else: 
@@ -130,16 +130,16 @@ def grade(state, all_patients_history) -> float:
             else: 
                 p_record = patient if isinstance(patient, dict) else {}
             
-            # Audit clinical quality
+            
             total_score += TriageRubric.evaluate_patient_outcome(p_record)
             
-            # Penalize excessive/wasteful diagnostics (Medical necessity logic)
+            
             standards = CLINICAL_STANDARDS.get(p_record.get("hidden_condition"), {})
             for test in p_record.get("tests_ordered", []):
                 if test not in standards.get("tests", []):
                     diagnostic_waste_penalty += 0.02
 
-        total_score -= 0.50 * len(fatal_errors) # Major safety penalty
+        total_score -= 0.50 * len(fatal_errors) 
         total_score -= diagnostic_waste_penalty
 
         if max_possible > 0:
@@ -147,10 +147,10 @@ def grade(state, all_patients_history) -> float:
         else:
             final_score = 0.0
 
-        # Strict range compliance (0.01 to 0.99) for Meta deep-validation
+        
         return round(max(0.01, min(0.99, final_score)), 4)
     except Exception:
-        # Fallback to a valid baseline numeric score to avoid environmental failure
+        
         return 0.01
 
 def grade_task(task_id: str, state, all_patients_history) -> float:
