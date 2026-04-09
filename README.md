@@ -1,3 +1,13 @@
+---
+title: Medical Triage AI
+emoji: 🏥
+colorFrom: blue
+colorTo: red
+sdk: docker
+pinned: false
+app_port: 7860
+---
+
 # 🏥 Medical Triage AI: Winner Edition 🏆
 
 Welcome to the **Medical Triage AI Environment**, a high-fidelity Reinforcement Learning benchmark developed for the **Meta PyTorch OpenEnv Hackathon**. This environment simulates an Emergency Department surge where an AI agent must prioritize, diagnose, and treat patients under intense pressure.
