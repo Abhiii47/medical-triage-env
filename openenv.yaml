@@ -1,6 +1,10 @@
-name: medical-triage-env
-version: "0.1.0"
 spec_version: 1
+name: medical-triage-env
+type: space
+runtime: fastapi
+app: server.app:app
+port: 7860
+version: "0.1.0"
 description: >
   An OpenEnv environment simulating a clinical ER Triage Nurse scenario.
   The agent must assess patients, order diagnostics, assign triage levels, administer
