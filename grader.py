@@ -6,7 +6,7 @@ and disposition efficiency. Adheres to strict Meta OpenEnv Phase 2 specs.
 from models import VitalsTelemetry
 
 
-CLINICAL_STANDARDS = {
+EXPECTED = {
     "STEMI": {
         "level": 1, 
         "tests": ["ECG"], 
@@ -61,7 +61,7 @@ class TriageRubric:
     def evaluate_patient_outcome(patient_record: dict) -> float:
         score = 0.0
         condition = patient_record.get("hidden_condition")
-        standards = CLINICAL_STANDARDS.get(condition, {})
+        standards = EXPECTED.get(condition, {})
         
         if not standards:
             return 0.0
@@ -134,7 +134,7 @@ def grade(state, all_patients_history) -> float:
             total_score += TriageRubric.evaluate_patient_outcome(p_record)
             
             
-            standards = CLINICAL_STANDARDS.get(p_record.get("hidden_condition"), {})
+            standards = EXPECTED.get(p_record.get("hidden_condition"), {})
             for test in p_record.get("tests_ordered", []):
                 if test not in standards.get("tests", []):
                     diagnostic_waste_penalty += 0.02

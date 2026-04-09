@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from models import IncidentState, IncidentObservation, IncidentAction, Patient, TriageState
 from tasks import get_scenario
 from simulator import Simulator
-from grader import grade, CLINICAL_STANDARDS as EXPECTED
+from grader import grade, EXPECTED
 
 
 class MedicalTriageEnv:
@@ -43,7 +43,7 @@ class MedicalTriageEnv:
             difficulty=self.difficulty,
         )
         self.simulator = Simulator(self._state)
-        self.simulator._update_time()
+        self.simulator._process_time_step()
         return self.simulator.get_observation()
 
     def step(self, action: IncidentAction):
@@ -88,8 +88,8 @@ class MedicalTriageEnv:
                 p = self.simulator._get_patient(action.patient_id)
                 if p and p.triage_level is None:
                     try:
-                        o2 = int(p.vitals.get("O2", "100").replace("%", ""))
-                        hr = int(p.vitals.get("HR", "80").split("/")[0])
+                        o2 = p.vitals.o2
+                        hr = p.vitals.hr
                         if o2 < 85 or hr > 140:
                             step_reward += 0.05
                     except Exception:
