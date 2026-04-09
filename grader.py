@@ -27,6 +27,9 @@ def grade(state, all_patients_history) -> float:
     fatal_errors = state_dict.get("fatal_errors", [])
     current_step = state_dict.get("current_step", 0)
     max_steps = state_dict.get("max_steps", 100)
+    
+    if all_patients_history is None:
+        all_patients_history = []
 
     for p in all_patients_history:
         max_score += 1.0
