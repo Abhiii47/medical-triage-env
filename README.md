@@ -1,3 +1,12 @@
+---
+title: Medical Triage Env
+emoji: 🏥
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # Medical Triage OpenEnv
 
 **Live Demo:** [https://huggingface.co/spaces/abhiii01/medical-triage-env](https://huggingface.co/spaces/abhiii01/medical-triage-env)
