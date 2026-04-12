@@ -10,7 +10,7 @@ description: >
   The agent must assess patients, order diagnostics, assign triage levels, administer
   treatments, and handle life-threatening drug interactions — all under time pressure.
   Simulates a real hospital emergency department workflow.
-author: "Meta PyTorch Hackathon"
+author: "Losers"
 tags:
   - openenv
   - medical

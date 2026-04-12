@@ -7,7 +7,7 @@ name = "medical-triage-env"
 version = "0.1.0"
 description = "Meta PyTorch Hackathon: Medical ER Triage Nurse OpenEnv"
 authors = [
-    {name = "Meta PyTorch Hackathon Team"}
+    {name = "Losers"}
 ]
 readme = "README.md"
 requires-python = ">=3.10"

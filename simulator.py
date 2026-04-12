@@ -56,7 +56,7 @@ class Simulator:
         elif action.action_type == "treat":
             treatment = action.target or "Supportive Care"
             patient.treatments_given.append(treatment)
-            # Check for life-threatening drug interactions
+            
             for condition, contraindications in INTERACTIONS_DB.items():
                 if condition in patient.history or condition == patient.hidden_condition:
                     if treatment in contraindications:
@@ -120,23 +120,23 @@ class Simulator:
 
         for patient in all_patients:
             cond = patient.hidden_condition
-            # Skip progression if already treated or stable
+            
             if cond not in CRITICAL_LEVELS or patient.treatments_given or patient.admitted_ward:
                 pass
             else:
                 self._apply_pathological_deterioration(patient, CRITICAL_LEVELS[cond])
 
-            # Always record vitals history and apply physiological jitter
+            
             patient.vitals_history.append(patient.vitals.model_copy(deep=True))
             self._apply_physiological_noise(patient.vitals)
 
-        # Handle bed management
+    
         empty_beds = [b for b, p in self.state.active_beds.items() if p is None]
         for b in empty_beds:
             if self.state.queue:
                 self.state.active_beds[b] = self.state.queue.pop(0)
 
-        # Check for shift completion
+        
         if self.state.current_step >= self.state.max_steps:
             self.state.is_done = True
             self.state.alerts.append("SHIFT END: Time limit reached. Finalizing reports.")
@@ -171,11 +171,11 @@ class Simulator:
         vitals.o2 = min(100, int(vitals.o2 * noise))
         vitals.temp = round(vitals.temp * random.uniform(0.998, 1.002), 1)
         
-        # Hemodynamic jitter
+        
         vitals.bp_sys = int(vitals.bp_sys * random.uniform(0.99, 1.01))
         vitals.bp_dia = int(vitals.bp_dia * random.uniform(0.99, 1.01))
         
-        # Absolute safety clamps for biological realism
+        
         vitals.hr = max(30, min(220, vitals.hr))
         vitals.o2 = max(50, vitals.o2)
         vitals.temp = max(34.0, min(43.0, vitals.temp))
@@ -228,7 +228,7 @@ class Simulator:
                 })
                 bed_sum[b] = p_obs
             else:
-                bed_sum[b] = "Bed Available"
+                bed_sum[b] = "Empty"
 
         # Provide strict numeric telemetry for advanced analytic models
         all_patients = list(self.state.queue) + [p for p in self.state.active_beds.values() if p]

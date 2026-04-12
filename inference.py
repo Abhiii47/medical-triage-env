@@ -45,7 +45,7 @@ TASKS = [
     {"id": "chaotic", "name": "ER Surge", "max_steps": 40, "success_threshold": 0.25},
 ]
 
-# CLINICAL STANDARD OPERATING PROCEDURE (SOP)
+
 SYSTEM_PROMPT = """You are a board-certified Emergency Medicine Triage Specialist. 
 Your objective is to maximize patient survival and clinic throughput by adhering to strict evidence-based protocols.
 
@@ -58,8 +58,8 @@ For every patient encounter, you must perform these tasks in sequence:
 5. admit/disch  : Final disposition to appropriate specialized ward.
 
 ### THE ESI (EMERGENCY SEVERITY INDEX) FRAMEWORK
-- LEVEL 1 (Critical): STEMI, Hemorrhagic Shock, Respiratory Failure, Opioid Overdose.
-- LEVEL 2 (Emergent): Sepsis, Acute Stroke, Status Asthmaticus (wheezing).
+- LEVEL 1 (Critical): STEMI, Hemorrhagic Shock, Respiratory Failure, Opioid Overdose, Status Asthmaticus (severe wheezing).
+- LEVEL 2 (Emergent): Sepsis, Acute Stroke.
 - LEVEL 3+ (Non-Emergent): Stable ankle sprains or minor injuries.
 
 ### PHARMACOLOGICAL GUIDELINES & CONTRAINDICATIONS
@@ -87,7 +87,7 @@ def _pick_priority_patient(obs: dict) -> Optional[str]:
     """Expert prioritization logic based on hemodynamic stability delta."""
     candidates = []
     
-    # Process both queue and active beds for global prioritization
+    
     queue = obs.get("queue_summary", [])
     beds = obs.get("active_beds_summary", {}).values()
     
@@ -99,7 +99,7 @@ def _pick_priority_patient(obs: dict) -> Optional[str]:
             hr = int(str(vitals.get("HR", "80")).split("/")[0])
             o2 = int(str(vitals.get("O2", "100%")).replace("%", ""))
             
-            # Weighted stability score (Higher Hypoxia/Tachycardia = Higher Priority)
+            
             priority_score = (100 - o2) * 2 + (hr - 80)
             candidates.append((priority_score, p["id"]))
         except (ValueError, KeyError):
@@ -152,7 +152,7 @@ def _extract_json(raw: str) -> Optional[dict]:
         pass
     return None
 
-# FALLBACK KNOWLEDGE BASE (Standard Protocols)
+
 _fallback_state: dict = {}
 
 def _map_symptoms_to_pathology(feedback_str: str) -> tuple:
@@ -165,7 +165,7 @@ def _map_symptoms_to_pathology(feedback_str: str) -> tuple:
     if "overdose" in fb or "opioid" in fb:
         return "Tox Screen", "Naloxone", "ICU", "1"
     if "sepsis" in fb or "fever" in fb:
-        treatment = "Vancomycin" if "penicillin" in fb else "Antibiotics"
+        treatment = "Vancomycin" if "penicillin" in fb else "Ceftriaxone"
         return "Blood Test", treatment, "ICU", "2"
     if "stroke" in fb or "facial droop" in fb:
         return "CT Scan", "tPA", "Neurology", "2"
@@ -182,7 +182,7 @@ def _clinical_protocol_fallback(obs: dict) -> dict:
     if not priority_id:
         return {"action_type": "wait", "reasoning": "Standard census monitoring; no active intervention required."}
 
-    # Reset tracking if switching patients
+    
     if _fallback_state.get("_pid") != priority_id:
         _fallback_state = {"_pid": priority_id, "_phase": 0}
 
@@ -240,7 +240,7 @@ def run_evaluation_cycle(openai_client: OpenAI, http_session: httpx.Client, task
     max_steps = task["max_steps"]
     success_threshold = task["success_threshold"]
 
-    # OpenEnv Mandatory Logging Strategy
+    
     print(f"[START] task={task_id} env={BENCHMARK} model={MODEL_NAME}", flush=True)
 
     history: List[str] = []
@@ -249,19 +249,19 @@ def run_evaluation_cycle(openai_client: OpenAI, http_session: httpx.Client, task
     final_score = 0.01
 
     try:
-        # 1. Environment Reset
+    
         resp = http_session.post(f"{ENV_BASE_URL}/reset", json={"difficulty": task_id, "seed": 42}, timeout=30)
         resp.raise_for_status()
         obs = resp.json()
 
-        # 2. Sequential Decision Loop
+        
         for step in range(1, max_steps + 1):
             if obs.get("done", False):
                 break
 
             action = get_action(openai_client, step, obs, rewards[-1] if rewards else 0.0, history)
             
-            # Clinical Trace for Judges
+            
             reasoning = action.get("reasoning", "Standard protocol followed.")
             print(f"[DEBUG] clinical_logic={reasoning}", flush=True)
 
@@ -277,7 +277,7 @@ def run_evaluation_cycle(openai_client: OpenAI, http_session: httpx.Client, task
             rewards.append(reward)
             steps_taken = step
 
-            # Structured Telemetry Logging
+            
             at = action.get("action_type", "wait")
             p_id = action.get("patient_id")
             tgt = action.get("target") or ""
@@ -297,7 +297,7 @@ def run_evaluation_cycle(openai_client: OpenAI, http_session: httpx.Client, task
             if done:
                 break
 
-        # 3. Final Performance Audit
+        
         try:
             state_resp = http_session.get(f"{ENV_BASE_URL}/state", timeout=10)
             if state_resp.status_code == 200:

@@ -97,7 +97,7 @@ SCENARIOS: Dict[str, Any] = {
         "beds": {"Bed_1": None, "Bed_2": None}
     },
     "chaotic": {
-        "max_steps": 35,
+        "max_steps": 40,
         "patients": [
             {
                 "id": "P-201", "age": 55,
